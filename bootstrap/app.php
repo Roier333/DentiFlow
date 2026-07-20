@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway termina HTTPS en su proxy y reenvía la petición a Laravel.
+        // Confiar en el proxy permite que Laravel genere assets y formularios HTTPS.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\EnsureRoleAccess::class,
         ]);
