@@ -21,7 +21,16 @@ class PasswordRecoveryController extends Controller
                 return redirect()->route('login')->withErrors(['email' => 'No encontramos una cuenta con ese correo. Ingresa el correo correcto en el inicio de sesión.']);
             }
 
-            $this->storeResetCode($request, $user);
+            try {
+                $this->storeResetCode($request, $user);
+            } catch (\Throwable $exception) {
+                report($exception);
+                $this->forgetResetCode($request);
+
+                return redirect()
+                    ->route('password.forgot')
+                    ->withErrors(['email' => 'No fue posible enviar el código. Verifica la configuración de correo e inténtalo nuevamente.']);
+            }
             $request->session()->flash('success', 'Enviamos un código de un solo uso a tu correo.');
             $codeSent = true;
         }
@@ -78,28 +87,37 @@ class PasswordRecoveryController extends Controller
             return back()->withErrors(['email' => 'Espera un minuto antes de solicitar otro código.'])->withInput();
         }
 
-        $code = (string) random_int(100000, 999999);
+        try {
+            $code = (string) random_int(100000, 999999);
 
-        $request->session()->put([
-            'password_reset_hash' => Hash::make($code),
-            'password_reset_email' => mb_strtolower($user->email),
-            'password_reset_expires_at' => now()->addMinutes(10)->timestamp,
-            'password_reset_attempts' => 0,
-            'password_reset_sent_at' => now()->timestamp,
-            'password_reset_verified' => false,
-        ]);
+            $request->session()->put([
+                'password_reset_hash' => Hash::make($code),
+                'password_reset_email' => mb_strtolower($user->email),
+                'password_reset_expires_at' => now()->addMinutes(10)->timestamp,
+                'password_reset_attempts' => 0,
+                'password_reset_sent_at' => now()->timestamp,
+                'password_reset_verified' => false,
+            ]);
 
-        if (app()->environment('testing')) {
-            $request->session()->put('password_reset_test_code', $code);
-        }
-
-        Mail::raw(
-            "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
-            function ($message) use ($user) {
-                $message->to($user->email, $user->name)
-                    ->subject('Código para cambiar tu contraseña - DentiFlow');
+            if (app()->environment('testing')) {
+                $request->session()->put('password_reset_test_code', $code);
             }
-        );
+
+            Mail::raw(
+                "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
+                function ($message) use ($user) {
+                    $message->to($user->email, $user->name)
+                        ->subject('Código para cambiar tu contraseña - DentiFlow');
+                }
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->forgetResetCode($request);
+
+            return back()
+                ->withErrors(['email' => 'No fue posible enviar el código. Verifica la configuración de correo e inténtalo nuevamente.'])
+                ->withInput();
+        }
 
         return back()
             ->with('success', 'Enviamos un código de un solo uso a tu correo.')
@@ -121,12 +139,14 @@ class PasswordRecoveryController extends Controller
 
         if (! $hash || $expired || ! $email) {
             $this->forgetResetCode($request);
+
             return redirect()->route('login')->withErrors(['email' => 'No hay un correo válido para recuperar la contraseña. Ingresa tu correo de nuevo desde la pantalla de login.']);
         }
 
         if (! Hash::check($data['code'], $hash)) {
             $attempts = (int) $request->session()->get('password_reset_attempts', 0);
             $request->session()->put('password_reset_attempts', $attempts + 1);
+
             return back()->withErrors(['code' => 'El código no es correcto.']);
         }
 
@@ -172,6 +192,7 @@ class PasswordRecoveryController extends Controller
         $user = User::where('email', $email)->first();
         if (! $user) {
             $this->forgetResetCode($request);
+
             return back()->withErrors(['password' => 'No encontramos la cuenta asociada al correo validado.']);
         }
 
