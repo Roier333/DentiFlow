@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
@@ -59,13 +60,7 @@ class PasswordRecoveryController extends Controller
             $request->session()->put('password_reset_test_code', $code);
         }
 
-        Mail::raw(
-            "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
-            function ($message) use ($user) {
-                $message->to($user->email, $user->name)
-                    ->subject('Código para cambiar tu contraseña - DentiFlow');
-            }
-        );
+        $this->sendResetCodeEmail($user, $code);
     }
 
     public function sendCode(Request $request)
@@ -103,13 +98,7 @@ class PasswordRecoveryController extends Controller
                 $request->session()->put('password_reset_test_code', $code);
             }
 
-            Mail::raw(
-                "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
-                function ($message) use ($user) {
-                    $message->to($user->email, $user->name)
-                        ->subject('Código para cambiar tu contraseña - DentiFlow');
-                }
-            );
+            $this->sendResetCodeEmail($user, $code);
         } catch (\Throwable $exception) {
             report($exception);
             $this->forgetResetCode($request);
@@ -213,5 +202,39 @@ class PasswordRecoveryController extends Controller
             'password_reset_test_code',
             'code_sent',
         ]);
+    }
+
+    private function sendResetCodeEmail(User $user, string $code): void
+    {
+        $apiKey = (string) config('services.brevo.key');
+        $fromEmail = (string) config('services.brevo.from_email');
+        $fromName = (string) config('services.brevo.from_name', 'DentiFlow');
+
+        if ($apiKey !== '' && $fromEmail !== '') {
+            Http::acceptJson()
+                ->withHeaders(['api-key' => $apiKey])
+                ->timeout(15)
+                ->post('https://api.brevo.com/v3/smtp/email', [
+                    'sender' => ['name' => $fromName, 'email' => $fromEmail],
+                    'to' => [['email' => $user->email, 'name' => $user->name]],
+                    'subject' => 'Código para cambiar tu contraseña - DentiFlow',
+                    'textContent' => "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
+                ])
+                ->throw();
+
+            return;
+        }
+
+        if (app()->environment('production')) {
+            throw new \RuntimeException('La API de Brevo no está configurada para el envío de correos.');
+        }
+
+        Mail::raw(
+            "Tu código DentiFlow es: {$code}\n\nExpira en 10 minutos y solo puede utilizarse una vez.",
+            function ($message) use ($user) {
+                $message->to($user->email, $user->name)
+                    ->subject('Código para cambiar tu contraseña - DentiFlow');
+            }
+        );
     }
 }

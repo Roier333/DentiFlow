@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -440,6 +441,29 @@ class LoginBackendTest extends TestCase
         $this->post('/test-expired-login')
             ->assertRedirect(route('login'))
             ->assertSessionHas('warning', 'Tu sesion expiro. Recarga el formulario e intenta iniciar sesion de nuevo.');
+    }
+
+    public function test_password_recovery_sends_code_through_brevo_api(): void
+    {
+        config()->set('services.brevo', [
+            'key' => 'test-brevo-key',
+            'from_email' => 'dentiflow@example.test',
+            'from_name' => 'DentiFlow',
+        ]);
+        Http::fake(['api.brevo.com/*' => Http::response(['messageId' => 'test-message'], 201)]);
+
+        $user = User::factory()->create([
+            'name' => 'Paciente Recuperacion',
+            'email' => 'recuperacion@example.test',
+        ]);
+
+        $this->get(route('password.forgot', ['email' => $user->email]))
+            ->assertOk()
+            ->assertSessionHas('password_reset_email', $user->email);
+
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.brevo.com/v3/smtp/email'
+            && $request['to'][0]['email'] === $user->email
+            && $request->hasHeader('api-key', 'test-brevo-key'));
     }
 
     public function test_any_active_profile_can_logout_without_error(): void
