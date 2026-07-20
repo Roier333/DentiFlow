@@ -90,7 +90,9 @@
                         <p class="text-sm font-medium text-slate-500">{{ $metrica['label'] }}</p>
                         <p class="mt-3 text-3xl font-bold text-slate-950">{{ $metrica['value'] }}</p>
                     </div>
-                    <span class="h-3 w-3 rounded-full border {{ $metrica['tone'] }}"></span>
+                    @if((int) $metrica['value'] > 0)
+                        <span class="h-3 w-3 rounded-full border {{ $metrica['tone'] }}" aria-label="{{ $metrica['label'] }} con citas"></span>
+                    @endif
                 </div>
                 <p class="mt-3 text-sm text-slate-500">{{ $metrica['detail'] }}</p>
             </div>
