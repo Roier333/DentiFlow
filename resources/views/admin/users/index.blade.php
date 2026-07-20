@@ -10,12 +10,6 @@
         'admin' => 'Administrador',
     ];
 
-    $roleDashboards = [
-        'doctor' => 'Dashboard clinico',
-        'asistente' => 'Dashboard de recepcion',
-        'admin' => 'Dashboard administrativo',
-    ];
-
     $roleBadges = [
         'doctor' => 'bg-[#f6e8ff] text-[#9700cf]',
         'asistente' => 'bg-violet-50 text-violet-700',
@@ -29,7 +23,6 @@
             <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Usuarios del sistema</h1>
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Consulta las cuentas existentes y administra sus accesos.</p>
         </div>
-        <a href="{{ route('admin.preferences') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Preferencias</a>
     </section>
 
     @include('partials.flash-success')
@@ -57,9 +50,6 @@
                         <th class="px-5 py-3">Nombre</th>
                         <th class="px-5 py-3">Correo</th>
                         <th class="px-5 py-3">Rol</th>
-                        <th class="px-5 py-3">Dashboard</th>
-                        <th class="px-5 py-3">Asignar rol</th>
-                        <th class="px-5 py-3">Perfil clínico</th>
                         <th class="px-5 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
@@ -71,22 +61,6 @@
                             <td class="px-5 py-4">
                                 <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase {{ $roleBadges[$user->role] ?? 'bg-slate-100 text-slate-600' }}">{{ $roleOptions[$user->role] ?? 'Sin rol activo' }}</span>
                             </td>
-                            <td class="px-5 py-4 text-xs font-semibold text-slate-500">{{ $roleDashboards[$user->role] ?? 'Sin dashboard' }}</td>
-                            <td class="px-5 py-4">
-                                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="flex min-w-[230px] items-center gap-2">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="name" value="{{ $user->name }}">
-                                    <input type="hidden" name="email" value="{{ $user->email }}">
-                                    <select name="role" class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 outline-none focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]" aria-label="Asignar rol a {{ $user->name }}">
-                                        @foreach($roleOptions as $value => $label)
-                                            <option value="{{ $value }}" @selected($user->role === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button class="rounded-xl bg-[#9700cf] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#8200b8]">Asignar</button>
-                                </form>
-                            </td>
-                            <td class="px-5 py-4 text-slate-500">{{ $user->dentist?->nombre ?? 'No vinculado' }}</td>
                             <td class="px-5 py-4 text-right">
                                 <div class="flex items-center justify-end gap-3">
                                     <a href="{{ route('admin.users.edit', $user) }}" class="text-sm font-semibold text-[#9700cf] hover:text-[#8200b8]">Editar</a>
@@ -116,7 +90,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-5 py-12 text-center text-sm text-slate-400">No hay usuarios que coincidan con la búsqueda.</td></tr>
+                        <tr><td colspan="4" class="px-5 py-12 text-center text-sm text-slate-400">No hay usuarios que coincidan con la búsqueda.</td></tr>
                     @endforelse
                 </tbody>
             </table>

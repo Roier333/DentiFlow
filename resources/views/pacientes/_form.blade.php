@@ -8,7 +8,7 @@
 @endphp
 <div class="mx-auto max-w-6xl space-y-6">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div><p class="text-sm font-semibold text-[#9700cf]">Expediente clínico</p><h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $title }}</h1><p class="mt-2 text-sm text-slate-500">{{ $subtitle }}</p></div>
+        <div><h1 class="text-3xl font-bold tracking-tight">{{ $title }}</h1><p class="mt-2 text-sm text-slate-500">{{ $subtitle }}</p></div>
         <a href="{{ $backUrl }}" class="inline-flex justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">{{ $backLabel }}</a>
     </header>
 
@@ -23,8 +23,8 @@
             <div class="grid gap-5 p-6 md:grid-cols-2">
                 <label class="text-sm font-semibold text-slate-700">Nombre completo <span class="text-fuchsia-500">*</span><input name="nombre" value="{{ old('nombre', $paciente['nombre'] ?? '') }}" placeholder="Nombre y apellidos" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+" title="Solo se permiten letras y espacios." oninput="{{ $lettersOnly }}" class="{{ $fieldClass }}"></label>
                 <label class="text-sm font-semibold text-slate-700">Correo electrónico<input type="email" name="email" value="{{ old('email', $paciente['email'] ?? '') }}" placeholder="paciente@correo.com" class="{{ $fieldClass }}"><span class="mt-1.5 block text-[10px] font-normal text-slate-400">Se utilizará para recordatorios y comunicaciones.</span></label>
-                <label class="text-sm font-semibold text-slate-700">Teléfono <span class="text-fuchsia-500">*</span><input type="tel" name="telefono" value="{{ old('telefono', $paciente['telefono'] ?? '') }}" placeholder="2220000000" required inputmode="numeric" pattern="[0-9]+" title="Solo se permiten numeros." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}"></label>
-                <label class="text-sm font-semibold text-slate-700">Dirección<input name="direccion" value="{{ old('direccion', $paciente['direccion'] ?? '') }}" placeholder="Calle, número, colonia y ciudad" class="{{ $fieldClass }}"></label>
+                <label class="text-sm font-semibold text-slate-700">Teléfono <span class="text-fuchsia-500">*</span><input type="tel" name="telefono" value="{{ old('telefono', $paciente['telefono'] ?? '') }}" placeholder="2220000000" required inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Ingresa exactamente 10 números." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}"><span class="mt-1.5 block text-[10px] font-normal text-slate-400">Debe contener exactamente 10 números.</span></label>
+                <label class="text-sm font-semibold text-slate-700">Dirección @if($method === 'POST')<span class="text-fuchsia-500">*</span>@endif<input name="direccion" value="{{ old('direccion', $paciente['direccion'] ?? '') }}" placeholder="Calle, número, colonia y ciudad" @if($method === 'POST') required @endif class="{{ $fieldClass }}"></label>
             </div>
         </section>
 
@@ -44,7 +44,7 @@
             <div class="flex items-center gap-3 border-b border-slate-100 px-6 py-5"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">!</span><div><h2 class="font-bold text-slate-800">Contacto de emergencia</h2><p class="text-xs text-slate-400">Información opcional para situaciones importantes</p></div></div>
             <div class="grid gap-5 p-6 md:grid-cols-3">
                 <label class="text-sm font-semibold text-slate-700">Nombre<input name="contacto_emergencia[nombre]" value="{{ old('contacto_emergencia.nombre', $emergency['nombre'] ?? '') }}" placeholder="Nombre del contacto" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+" title="Solo se permiten letras y espacios." oninput="{{ $lettersOnly }}" class="{{ $fieldClass }}"></label>
-                <label class="text-sm font-semibold text-slate-700">Teléfono<input type="tel" name="contacto_emergencia[telefono]" value="{{ old('contacto_emergencia.telefono', $emergency['telefono'] ?? '') }}" placeholder="2220000000" inputmode="numeric" pattern="[0-9]+" title="Solo se permiten numeros." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}"></label>
+                <label class="text-sm font-semibold text-slate-700">Teléfono<input type="tel" name="contacto_emergencia[telefono]" value="{{ old('contacto_emergencia.telefono', $emergency['telefono'] ?? '') }}" placeholder="2220000000" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Ingresa exactamente 10 números." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}"><span class="mt-1.5 block text-[10px] font-normal text-slate-400">Si lo proporcionas, debe contener 10 números.</span></label>
                 <label class="text-sm font-semibold text-slate-700">Parentesco<input name="contacto_emergencia[relacion]" value="{{ old('contacto_emergencia.relacion', $emergency['relacion'] ?? '') }}" placeholder="Ej. Familiar, pareja" class="{{ $fieldClass }}"></label>
             </div>
         </section>

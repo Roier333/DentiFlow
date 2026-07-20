@@ -99,15 +99,15 @@ class PatientController extends Controller
     {
         $data = $request->validate([
             'nombre' => 'required|string|max:255|regex:/^[\pL\s]+$/u',
-            'telefono' => 'required|string|max:20|regex:/^[0-9]+$/',
+            'telefono' => 'required|digits:10',
             'email' => 'nullable|email|max:255|unique:patients,email',
-            'direccion' => 'nullable|string|max:500',
+            'direccion' => 'required|string|max:500',
             'ultima_visita' => 'nullable|date',
             'estado' => 'nullable|string|max:50',
             'seguro' => 'nullable|string|max:150',
             'poliza' => 'nullable|string|max:100',
             'contacto_emergencia.nombre' => 'nullable|string|max:255|regex:/^[\pL\s]+$/u',
-            'contacto_emergencia.telefono' => 'nullable|string|max:20|regex:/^[0-9]+$/',
+            'contacto_emergencia.telefono' => 'nullable|digits:10',
             'contacto_emergencia.relacion' => 'nullable|string|max:100',
         ], $this->validationMessages());
 
@@ -144,7 +144,7 @@ class PatientController extends Controller
 
         $data = $request->validate([
             'nombre' => 'required|string|max:255|regex:/^[\pL\s]+$/u',
-            'telefono' => 'required|string|max:20|regex:/^[0-9]+$/',
+            'telefono' => 'required|digits:10',
             'email' => ['nullable', 'email', 'max:255', Rule::unique('patients', 'email')->ignore($patient->id)],
             'direccion' => 'nullable|string|max:500',
             'ultima_visita' => 'nullable|date',
@@ -152,7 +152,7 @@ class PatientController extends Controller
             'seguro' => 'nullable|string|max:150',
             'poliza' => 'nullable|string|max:100',
             'contacto_emergencia.nombre' => 'nullable|string|max:255|regex:/^[\pL\s]+$/u',
-            'contacto_emergencia.telefono' => 'nullable|string|max:20|regex:/^[0-9]+$/',
+            'contacto_emergencia.telefono' => 'nullable|digits:10',
             'contacto_emergencia.relacion' => 'nullable|string|max:100',
         ], $this->validationMessages());
 
@@ -317,9 +317,10 @@ class PatientController extends Controller
             'email.unique' => 'Ese correo ya esta registrado en otro paciente.',
             'email.email' => 'Escribe un correo valido.',
             'nombre.regex' => 'El nombre completo solo debe contener letras y espacios.',
-            'telefono.regex' => 'El telefono solo debe contener numeros.',
+            'telefono.digits' => 'El teléfono debe contener exactamente 10 números.',
+            'direccion.required' => 'La dirección es obligatoria.',
             'contacto_emergencia.nombre.regex' => 'El nombre del contacto de emergencia solo debe contener letras y espacios.',
-            'contacto_emergencia.telefono.regex' => 'El telefono del contacto de emergencia solo debe contener numeros.',
+            'contacto_emergencia.telefono.digits' => 'El teléfono del contacto de emergencia debe contener exactamente 10 números.',
             'ultima_visita.date' => 'La ultima visita debe ser una fecha valida.',
         ];
     }

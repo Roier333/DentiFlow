@@ -965,6 +965,36 @@ class AppointmentDentistSessionTest extends TestCase
         ]);
     }
 
+    public function test_assistant_can_cancel_an_appointment_created_by_another_assistant(): void
+    {
+        $creator = User::factory()->create(['role' => 'asistente']);
+        $assistant = User::factory()->create(['role' => 'asistente']);
+        $dentist = Dentist::create(['nombre' => 'Dra. Agenda Compartida', 'telefono' => '2220000292']);
+        $patient = Patient::create(['nombre' => 'Ronaldo', 'telefono' => '2220000293', 'estado' => 'Activo']);
+        $appointment = Appointment::create([
+            'patient_id' => $patient->id,
+            'dentist_id' => $dentist->id,
+            'created_by_user_id' => $creator->id,
+            'date' => now()->addDay()->toDateString(),
+            'time' => '14:00:00',
+            'tipo' => 'Revision',
+            'estado' => 'Pendiente',
+        ]);
+
+        $this->withSession([
+            'access_role' => 'asistente',
+            'access_user_id' => $assistant->id,
+        ])->post(route('citas.cancelar', $appointment), [
+            'cancellation_reason' => 'Cancelada desde la agenda compartida.',
+        ])->assertRedirect(route('citas'));
+
+        $this->assertDatabaseHas('appointments', [
+            'id' => $appointment->id,
+            'estado' => 'Cancelada',
+        ]);
+        $this->assertDatabaseHas('patients', ['id' => $patient->id]);
+    }
+
     public function test_doctor_only_sees_own_appointments_in_appointments_section(): void
     {
         $user = User::factory()->create(['name' => 'Dra. Agenda Privada', 'role' => 'doctor']);

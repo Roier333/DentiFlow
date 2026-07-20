@@ -66,7 +66,7 @@ Route::post('/login', function (Request $request) {
             ->withInput($request->only('email', 'role'));
     }
 
-    Auth::login($user, $request->boolean('remember'));
+    Auth::login($user);
     $request->session()->regenerate();
 
     // La sesion conserva los datos que usan el middleware y las vistas existentes.
@@ -215,7 +215,9 @@ Route::post('/logout', function (Request $request) {
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect()->route('role.select');
+    return redirect()
+        ->route('role.select')
+        ->with('logout_success', 'Sesión cerrada correctamente.');
 })->name('logout');
 
 Route::get('/administracion/configuracion', [AdminSettingsController::class, 'edit'])->name('admin.settings');

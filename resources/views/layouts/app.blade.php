@@ -240,6 +240,7 @@
         <main class="p-4 sm:p-7 xl:p-9"><div class="mx-auto max-w-[1500px]">@yield('content')</div></main>
     </div>
 </div>
+@stack('scripts')
 </body>
 </html>
 

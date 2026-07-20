@@ -420,7 +420,8 @@ class AppointmentController extends Controller
             $id,
             'Cancelada',
             'Cita #%s cancelada. El registro se conservó en el sistema.',
-            ['cancellation_reason' => trim((string) ($data['cancellation_reason'] ?? '')) ?: null]
+            ['cancellation_reason' => trim((string) ($data['cancellation_reason'] ?? '')) ?: null],
+            true
         );
     }
 
@@ -615,7 +616,7 @@ class AppointmentController extends Controller
         ]);
     }
 
-    private function updateEstado($id, string $estado, string $message, array $extra = [])
+    private function updateEstado($id, string $estado, string $message, array $extra = [], bool $allowAnyAssistant = false)
     {
         abort_unless(in_array($estado, self::VALID_STATUSES, true), 422);
 
@@ -625,7 +626,11 @@ class AppointmentController extends Controller
             return redirect()->route('citas')->with('success', sprintf("Cita #%s no encontrada.", $id));
         }
 
-        $this->authorizeAppointmentAccess($appointment);
+        if ($allowAnyAssistant) {
+            $this->authorizeCalendarAppointmentAccess($appointment);
+        } else {
+            $this->authorizeAppointmentAccess($appointment);
+        }
         $appointment->update(array_merge(['estado' => $estado], $extra));
 
         return redirect()->route('citas')->with('success', sprintf($message, $id));

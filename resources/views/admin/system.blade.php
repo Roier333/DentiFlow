@@ -6,9 +6,7 @@
         <div>
             <p class="text-xs font-bold uppercase tracking-[.2em] text-[#9700cf]">Administraci&oacute;n t&eacute;cnica</p>
             <h1 class="mt-2 text-3xl font-bold text-slate-950">Gesti&oacute;n del sistema</h1>
-            <p class="mt-2 text-sm text-slate-500">Supervisa la plataforma sin acceder a informaci&oacute;n cl&iacute;nica.</p>
         </div>
-        <span class="rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700">Acceso exclusivo de administrador</span>
     </header>
 
     @include('partials.flash-success')
@@ -60,10 +58,13 @@
                 <form method="POST" action="{{ route('admin.system.cache') }}" class="mt-4">@csrf<button class="rounded-xl bg-[#9700cf] px-4 py-2.5 text-xs font-bold text-white">Limpiar cach&eacute;</button></form>
             </div>
             <div class="rounded-xl border border-slate-200 p-4">
-                <h3 class="text-sm font-bold text-slate-800">Respaldo de base de datos</h3>
-                <p class="mt-1 text-xs leading-5 text-slate-500">Genera y descarga una copia de la base {{ $backupDriver }} actual.</p>
+                <div class="flex items-start justify-between gap-4">
+                    <div><h3 class="text-sm font-bold text-slate-800">Respaldo de base de datos</h3><p class="mt-1 text-xs leading-5 text-slate-500">Genera y descarga una copia de la base {{ $backupDriver }} actual.</p></div>
+                    <span class="shrink-0 rounded-full bg-[#f6e8ff] px-3 py-1 text-xs font-bold text-[#9700cf]">{{ $backupDriver }}</span>
+                </div>
                 @if($backupAvailable)
-                    <a href="{{ route('admin.system.backup') }}" class="mt-4 inline-flex rounded-xl border border-[#d3a2f2] px-4 py-2.5 text-xs font-bold text-[#9700cf]">Descargar respaldo</a>
+                    <p class="mt-3 text-xs text-slate-400">Herramienta de respaldo disponible</p>
+                    <a href="{{ route('admin.system.backup') }}" class="mt-4 inline-flex rounded-xl bg-[#9700cf] px-4 py-2.5 text-xs font-bold text-white">Descargar respaldo</a>
                 @else
                     <p class="mt-4 text-xs font-semibold text-slate-400">La herramienta de respaldo no est&aacute; disponible. Configura MYSQLDUMP_PATH.</p>
                 @endif

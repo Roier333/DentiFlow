@@ -49,7 +49,7 @@ class LoginBackendTest extends TestCase
     {
         $this->get(route('login'))
             ->assertOk()
-            ->assertSee('Acceso unico para el equipo')
+            ->assertSee('Plataforma centralizada de gestión')
             ->assertSee('Crear cuenta')
             ->assertSee(route('register'), false)
             ->assertDontSee(route('login', ['role' => 'doctor']), false)
@@ -260,7 +260,6 @@ class LoginBackendTest extends TestCase
         $this->post(route('login'), [
             'email' => $assistant->email,
             'password' => 'Password123!',
-            'remember' => 'on',
         ])
             ->assertRedirect(route('inicio'))
             ->assertSessionHas('access_role', 'asistente')
@@ -298,6 +297,7 @@ class LoginBackendTest extends TestCase
 
         $this->post(route('logout'))
             ->assertRedirect(route('role.select'))
+            ->assertSessionHas('logout_success', 'Sesión cerrada correctamente.')
             ->assertSessionMissing('access_role')
             ->assertSessionMissing('access_user_id');
 
@@ -398,6 +398,39 @@ class LoginBackendTest extends TestCase
         $page->assertSee($message);
         $page->assertDontSee('validation.min.string');
         $this->assertSame(1, substr_count($page->getContent(), $message));
+    }
+
+    public function test_code_password_change_requires_complex_and_matching_passwords(): void
+    {
+        $user = User::create([
+            'name' => 'Usuario Cambio Seguro',
+            'email' => 'cambio.seguro@example.test',
+            'role' => 'asistente',
+            'password' => 'Password123!',
+        ]);
+
+        $session = [
+            'password_reset_verified' => true,
+            'password_reset_email' => $user->email,
+        ];
+
+        $this->withSession($session)
+            ->post(route('password.forgot.change'), [
+                'password' => 'sololetras',
+                'password_confirmation' => 'sololetras',
+            ])
+            ->assertSessionHasErrors('password');
+
+        $this->withSession($session)
+            ->post(route('password.forgot.change'), [
+                'password' => 'NuevaPassword123!',
+                'password_confirmation' => 'OtraPassword123!',
+            ])
+            ->assertSessionHasErrors([
+                'password' => 'Las contraseñas no coinciden.',
+            ]);
+
+        $this->assertTrue(Hash::check('Password123!', $user->fresh()->password));
     }
 
     public function test_expired_login_form_redirects_back_to_login_with_warning(): void

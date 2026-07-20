@@ -20,6 +20,7 @@ class PatientBackendTest extends TestCase
                 'nombre' => 'Paciente Sin Visita',
                 'telefono' => '2220000000',
                 'email' => '',
+                'direccion' => 'Calle Principal 100, Puebla',
                 'estado' => 'Activo',
             ])
             ->assertRedirect(route('pacientes'));
@@ -58,6 +59,25 @@ class PatientBackendTest extends TestCase
         $response->assertSessionHasErrors(['email' => 'Ese correo ya esta registrado en otro paciente.']);
     }
 
+    public function test_address_is_required_when_doctor_or_assistant_creates_a_patient(): void
+    {
+        foreach (['doctor', 'asistente'] as $index => $role) {
+            $this->withSession(['access_role' => $role])
+                ->from(route('pacientes.create'))
+                ->post(route('pacientes.store'), [
+                    'nombre' => 'Paciente Sin Direccion '.$role,
+                    'telefono' => '222000001'.$index,
+                    'estado' => 'Activo',
+                ])
+                ->assertRedirect(route('pacientes.create'))
+                ->assertSessionHasErrors([
+                    'direccion' => 'La dirección es obligatoria.',
+                ]);
+        }
+
+        $this->assertDatabaseCount('patients', 0);
+    }
+
     public function test_patient_name_and_phone_only_accept_allowed_characters(): void
     {
         $response = $this->withSession(['access_role' => 'doctor'])
@@ -71,7 +91,7 @@ class PatientBackendTest extends TestCase
         $response->assertRedirect(route('pacientes.create'));
         $response->assertSessionHasErrors([
             'nombre' => 'El nombre completo solo debe contener letras y espacios.',
-            'telefono' => 'El telefono solo debe contener numeros.',
+            'telefono' => 'El teléfono debe contener exactamente 10 números.',
         ]);
     }
 
@@ -92,8 +112,28 @@ class PatientBackendTest extends TestCase
         $response->assertRedirect(route('pacientes.create'));
         $response->assertSessionHasErrors([
             'contacto_emergencia.nombre' => 'El nombre del contacto de emergencia solo debe contener letras y espacios.',
-            'contacto_emergencia.telefono' => 'El telefono del contacto de emergencia solo debe contener numeros.',
+            'contacto_emergencia.telefono' => 'El teléfono del contacto de emergencia debe contener exactamente 10 números.',
         ]);
+    }
+
+    public function test_patient_phone_must_have_exactly_ten_digits(): void
+    {
+        foreach (['123456789', '12345678901'] as $index => $phone) {
+            $this->withSession(['access_role' => $index === 0 ? 'doctor' : 'asistente'])
+                ->from(route('pacientes.create'))
+                ->post(route('pacientes.store'), [
+                    'nombre' => 'Paciente Telefono Invalido',
+                    'telefono' => $phone,
+                    'direccion' => 'Calle Principal 100',
+                    'estado' => 'Activo',
+                ])
+                ->assertRedirect(route('pacientes.create'))
+                ->assertSessionHasErrors([
+                    'telefono' => 'El teléfono debe contener exactamente 10 números.',
+                ]);
+        }
+
+        $this->assertDatabaseCount('patients', 0);
     }
 
     public function test_assistant_can_open_expedientes_section(): void
@@ -109,6 +149,53 @@ class PatientBackendTest extends TestCase
             ->assertOk()
             ->assertSee('Expedientes')
             ->assertSee('Paciente Expediente');
+    }
+
+    public function test_patient_page_includes_delete_interaction_script(): void
+    {
+        Patient::create([
+            'nombre' => 'Paciente Para Eliminar',
+            'telefono' => '2220000000',
+            'estado' => 'Activo',
+        ]);
+
+        $this->withSession(['access_role' => 'doctor'])
+            ->get(route('pacientes'))
+            ->assertOk()
+            ->assertSee('js-delete-patient', false)
+            ->assertSee("method: 'DELETE'", false);
+    }
+
+    public function test_doctor_can_delete_a_patient(): void
+    {
+        $patient = Patient::create([
+            'nombre' => 'Paciente Doctor Eliminar',
+            'telefono' => '2220000001',
+            'estado' => 'Activo',
+        ]);
+
+        $this->withSession(['access_role' => 'doctor'])
+            ->deleteJson(route('pacientes.destroy', $patient))
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseMissing('patients', ['id' => $patient->id]);
+    }
+
+    public function test_assistant_can_delete_a_patient(): void
+    {
+        $patient = Patient::create([
+            'nombre' => 'Paciente Asistente Eliminar',
+            'telefono' => '2220000002',
+            'estado' => 'Activo',
+        ]);
+
+        $this->withSession(['access_role' => 'asistente'])
+            ->deleteJson(route('pacientes.destroy', $patient))
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseMissing('patients', ['id' => $patient->id]);
     }
 
     public function test_doctor_expedientes_are_scoped_to_own_patients(): void

@@ -20,8 +20,9 @@ class AdminUsersTest extends TestCase
             ->assertOk()
             ->assertSee('Usuarios del sistema')
             ->assertSee('Usuario Registrado')
-            ->assertSee('Dashboard clinico')
-            ->assertSee('Asignar rol')
+            ->assertDontSee('Dashboard clinico')
+            ->assertDontSee('Asignar rol')
+            ->assertDontSee('Perfil clínico')
             ->assertDontSee('Crear usuario')
             ->assertDontSee('admin.users.store');
     }

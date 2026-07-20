@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rules\Password;
 
 class PasswordRecoveryController extends Controller
 {
@@ -146,10 +147,18 @@ class PasswordRecoveryController extends Controller
     public function changePassword(Request $request)
     {
         $data = $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                Password::min(8)->mixedCase()->numbers()->symbols(),
+                'confirmed',
+            ],
         ], [
             'password.required' => 'Ingresa una nueva contraseña.',
             'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.mixed' => 'La contraseña debe incluir mayúsculas y minúsculas.',
+            'password.numbers' => 'La contraseña debe incluir al menos un número.',
+            'password.symbols' => 'La contraseña debe incluir al menos un símbolo.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 

@@ -63,8 +63,7 @@
     <form method="POST" action="{{ route('citas.cancelar', ['id' => $cita['id']]) }}" class="bg-white">
         @csrf
         <div class="border-b border-slate-100 px-6 py-5">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-fuchsia-600">Cancelar cita</p>
-            <h2 class="mt-1 text-2xl font-bold text-slate-900">Confirmar cancelacion</h2>
+            <h2 class="text-2xl font-bold text-slate-900">Cancelar cita</h2>
             <p class="mt-1 text-sm text-slate-500">La cita se conservara en el historial con estado cancelado.</p>
         </div>
 
@@ -82,7 +81,7 @@
 
         <div class="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
             <button type="button" data-dialog-close class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Volver</button>
-            <button type="submit" class="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-fuchsia-100 transition hover:bg-fuchsia-700">Confirmar cancelacion</button>
+            <button type="submit" class="rounded-xl bg-fuchsia-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-fuchsia-100 transition hover:bg-fuchsia-700">Cancelar cita</button>
         </div>
     </form>
 </dialog>

@@ -3,7 +3,7 @@
 @section('content')
     @php($fromExpedientes = request('from') === 'expedientes')
     @include('pacientes._form', [
-        'title' => 'Editar expediente',
+        'title' => 'Editar paciente',
         'subtitle' => 'Actualiza la información personal, de contacto y administrativa del paciente.',
         'action' => route('pacientes.update', ['paciente' => $paciente['key']]),
         'method' => 'PUT',
