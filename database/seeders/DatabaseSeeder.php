@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Administrador DentiFlow',
@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'asistente@dentiflow.com'],
             [
                 'name' => 'Asistente DentiFlow',
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $doctor = User::updateOrCreate(
+        $doctor = User::firstOrCreate(
             ['email' => 'doctor@dentiflow.com'],
             [
                 'name' => 'Dra. DentiFlow',
@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Dentist::updateOrCreate(
+        Dentist::firstOrCreate(
             ['user_id' => $doctor->id],
             [
                 'nombre' => $doctor->name,
