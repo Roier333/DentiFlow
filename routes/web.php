@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminSystemController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\ClinicalRecordController;
@@ -30,56 +31,7 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|string',
-        'role' => 'nullable|in:doctor,asistente,admin',
-    ], [
-        'email.required' => 'El correo electronico es obligatorio.',
-        'email.email' => 'Ingresa un correo electronico valido.',
-        'password.required' => 'La contrasena es obligatoria.',
-    ]);
-
-    $user = User::where('email', $request->input('email'))->first();
-
-    if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-        return back()->withErrors(['email' => 'Las credenciales no coinciden con nuestros registros.'])->withInput($request->only('email'));
-    }
-
-    // Conserva el aviso solo para cuentas antiguas que ya estaban pendientes.
-    if ($user->role === 'pendiente') {
-        $request->session()->regenerate();
-
-        return redirect()
-            ->route('register.pending')
-            ->with([
-                'pending_name' => $user->name,
-                'pending_email' => $user->email,
-            ]);
-    }
-
-    $selectedRole = $request->input('role');
-    if ($selectedRole && $user->role !== $selectedRole) {
-        return back()
-            ->withErrors(['email' => 'Esta cuenta no pertenece al acceso de '.($selectedRole === 'doctor' ? 'Doctor' : ($selectedRole === 'asistente' ? 'Asistente' : 'Administrador')).'.'])
-            ->withInput($request->only('email', 'role'));
-    }
-
-    Auth::login($user);
-    $request->session()->regenerate();
-
-    // La sesion conserva los datos que usan el middleware y las vistas existentes.
-    session([
-        'access_role' => $user->role,
-        'access_user_id' => $user->id,
-        'access_name' => $user->name,
-        'access_email' => $user->email,
-        'access_gender' => $user->gender,
-    ]);
-
-    return redirect()->route('inicio');
-});
+Route::post('/login', [LoginController::class, 'store']);
 
 Route::get('/registro-en-espera', function () {
     return view('auth.pending');

@@ -62,7 +62,14 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
+                PDO::ATTR_PERSISTENT => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => sprintf(
+                    'SET SESSION wait_timeout = %d, interactive_timeout = %d',
+                    (int) env('MYSQL_SESSION_WAIT_TIMEOUT', 600),
+                    (int) env('MYSQL_SESSION_INTERACTIVE_TIMEOUT', 600),
+                ),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '') : [],
         ],
 
         'mariadb' => [
