@@ -16,6 +16,10 @@ class LoginController extends Controller
 {
     public function store(Request $request, DatabaseConnectionRetry $databaseRetry): RedirectResponse|Response
     {
+        $request->merge([
+            'email' => mb_strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
@@ -66,16 +70,20 @@ class LoginController extends Controller
                 ->withInput($request->only('email', 'role'));
         }
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        session([
+        $request->session()->put([
             'access_role' => $user->role,
             'access_user_id' => $user->id,
             'access_name' => $user->name,
             'access_email' => $user->email,
             'access_gender' => $user->gender,
         ]);
+
+        // Railway usa sesiones en MySQL. Guardarlas antes de redirigir evita que
+        // el siguiente request llegue sin la autenticacion recien creada.
+        $request->session()->save();
 
         return redirect()->route('inicio');
     }

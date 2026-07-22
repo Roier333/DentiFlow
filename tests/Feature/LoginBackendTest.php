@@ -16,6 +16,27 @@ class LoginBackendTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_login_normalizes_email_and_persists_the_authenticated_session(): void
+    {
+        $user = User::create([
+            'name' => 'Doctor Railway',
+            'email' => 'doctor.railway@example.test',
+            'role' => 'doctor',
+            'password' => 'Password123!',
+        ]);
+
+        $this->post('/login', [
+            'email' => '  DOCTOR.RAILWAY@EXAMPLE.TEST  ',
+            'password' => 'Password123!',
+        ])
+            ->assertRedirect(route('inicio'))
+            ->assertSessionHas('access_user_id', $user->id)
+            ->assertSessionHas('access_role', 'doctor');
+
+        $this->assertAuthenticatedAs($user);
+        $this->get(route('inicio'))->assertOk();
+    }
+
     public function test_users_login_through_one_form_and_session_uses_their_stored_role(): void
     {
         foreach (['admin', 'doctor', 'asistente'] as $role) {
