@@ -25,6 +25,11 @@ class AdminUserController extends Controller
             ->paginate(8)
             ->withQueryString();
 
+        $pendingUsers = User::query()
+            ->where('role', 'pendiente')
+            ->orderBy('created_at')
+            ->get();
+
         $summary = [
             'total' => User::count(),
             'superadmins' => User::where('role', 'superadmin')->count(),
@@ -34,7 +39,7 @@ class AdminUserController extends Controller
             'pending' => User::where('role', 'pendiente')->count(),
         ];
 
-        return view('admin.users.index', compact('users', 'summary', 'search'));
+        return view('admin.users.index', compact('users', 'pendingUsers', 'summary', 'search'));
     }
 
     public function edit(User $user)
@@ -77,6 +82,44 @@ class AdminUserController extends Controller
         }
 
         return redirect()->route('admin.users')->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    public function approve(User $user)
+    {
+        if ($user->role !== 'pendiente') {
+            return redirect()
+                ->route('admin.users')
+                ->withErrors(['user' => 'Esta cuenta ya fue revisada.']);
+        }
+
+        if (! in_array($user->requested_role, ['doctor', 'asistente'], true)) {
+            return redirect()
+                ->route('admin.users.edit', $user)
+                ->withErrors(['role' => 'La solicitud no tiene un perfil válido. Selecciona el rol manualmente.']);
+        }
+
+        $approvedRole = $user->requested_role;
+        $user->update([
+            'role' => $approvedRole,
+            'requested_role' => null,
+        ]);
+
+        if ($approvedRole === 'doctor') {
+            $user->dentist()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nombre' => $user->name,
+                    'telefono' => $user->telefono ?: 'No registrado',
+                    'especialidad' => $user->puesto ?: 'Odontologia general',
+                ]
+            );
+        }
+
+        $roleLabel = $approvedRole === 'doctor' ? 'Doctor' : 'Asistente';
+
+        return redirect()
+            ->route('admin.users')
+            ->with('success', $user->name.' fue aprobado como '.$roleLabel.'.');
     }
 
     public function destroy(Request $request, User $user)

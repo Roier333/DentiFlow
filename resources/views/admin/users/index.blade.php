@@ -5,6 +5,7 @@
 @section('content')
 @php
     $roleOptions = [
+        'pendiente' => 'Pendiente',
         'doctor' => 'Doctor',
         'asistente' => 'Asistente',
         'admin' => 'Administrador operativo',
@@ -12,6 +13,7 @@
     ];
 
     $roleBadges = [
+        'pendiente' => 'bg-amber-50 text-amber-700',
         'doctor' => 'bg-[#f6e8ff] text-[#9700cf]',
         'asistente' => 'bg-violet-50 text-violet-700',
         'admin' => 'bg-[#ead2fb] text-[#8200b8]',
@@ -33,6 +35,59 @@
             @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
         </div>
     @endif
+
+    <section class="overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-[0_4px_24px_rgba(30,34,60,.05)]">
+        <div class="flex flex-col gap-3 border-b border-amber-100 bg-amber-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="flex h-8 min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 text-xs font-bold text-white">{{ $pendingUsers->count() }}</span>
+                    <h2 class="font-bold text-slate-900">Solicitudes pendientes</h2>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">Revisa el perfil solicitado antes de conceder acceso al sistema.</p>
+            </div>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            @forelse($pendingUsers as $pendingUser)
+                @php
+                    $requestedRoleLabel = $pendingUser->requested_role === 'doctor'
+                        ? 'Doctor'
+                        : ($pendingUser->requested_role === 'asistente' ? 'Asistente' : 'Sin especificar');
+                    $hasValidRequest = in_array($pendingUser->requested_role, ['doctor', 'asistente'], true);
+                @endphp
+                <article class="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                    <div class="flex min-w-0 items-start gap-4">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f6e8ff] text-sm font-bold text-[#9700cf]">{{ mb_strtoupper(mb_substr($pendingUser->name, 0, 1)) }}</span>
+                        <div class="min-w-0">
+                            <p class="font-bold text-slate-800">{{ $pendingUser->name }}</p>
+                            <p class="mt-1 break-all text-sm text-slate-500">{{ $pendingUser->email }}</p>
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Pendiente</span>
+                                <span class="rounded-full bg-[#f6e8ff] px-3 py-1 text-xs font-bold text-[#9700cf]">Solicitó: {{ $requestedRoleLabel }}</span>
+                                <span class="text-xs text-slate-400">{{ $pendingUser->created_at?->diffForHumans() }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 lg:justify-end">
+                        @if($hasValidRequest)
+                            <form method="POST" action="{{ route('admin.users.approve', $pendingUser) }}">
+                                @csrf
+                                @method('PUT')
+                                <button class="rounded-xl bg-[#9700cf] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#8200b8]">Aprobar como {{ $requestedRoleLabel }}</button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.users.edit', $pendingUser) }}" class="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50">{{ $hasValidRequest ? 'Revisar datos' : 'Asignar rol' }}</a>
+                    </div>
+                </article>
+            @empty
+                <div class="p-8 text-center">
+                    <p class="text-sm font-bold text-emerald-700">No hay solicitudes pendientes</p>
+                    <p class="mt-1 text-xs text-slate-400">Todas las cuentas han sido revisadas.</p>
+                </div>
+            @endforelse
+        </div>
+    </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(30,34,60,.05)]">
         <div class="border-b border-slate-100 p-5">

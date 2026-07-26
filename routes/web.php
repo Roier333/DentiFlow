@@ -183,6 +183,7 @@ Route::put('/administracion/reportes/citas/{appointment}', [AdminReportControlle
 Route::delete('/administracion/reportes/{treatment}', [AdminReportController::class, 'destroy'])->name('admin.reports.destroy');
 Route::get('/administracion/usuarios', [AdminUserController::class, 'index'])->name('admin.users');
 Route::get('/administracion/usuarios/{user}/editar', [AdminUserController::class, 'edit'])->name('admin.users.edit');
+Route::put('/administracion/usuarios/{user}/aprobar', [AdminUserController::class, 'approve'])->name('admin.users.approve');
 Route::put('/administracion/usuarios/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
 Route::delete('/administracion/usuarios/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
 

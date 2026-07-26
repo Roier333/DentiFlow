@@ -92,6 +92,57 @@ class AdminUsersTest extends TestCase
         ]);
     }
 
+    public function test_superadmin_sees_requested_profile_and_can_approve_it_directly(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Solicitud Doctora',
+            'email' => 'solicitud.doctora@example.test',
+            'role' => 'pendiente',
+            'requested_role' => 'doctor',
+        ]);
+
+        $this->withSession(['access_role' => 'superadmin'])
+            ->get(route('admin.users'))
+            ->assertOk()
+            ->assertSee('Solicitudes pendientes')
+            ->assertSee('Solicitud Doctora')
+            ->assertSee('Solicitó: Doctor')
+            ->assertSee('Aprobar como Doctor');
+
+        $this->withSession(['access_role' => 'superadmin'])
+            ->put(route('admin.users.approve', $user))
+            ->assertRedirect(route('admin.users'))
+            ->assertSessionHas('success', 'Solicitud Doctora fue aprobado como Doctor.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'role' => 'doctor',
+            'requested_role' => null,
+        ]);
+        $this->assertDatabaseHas('dentists', [
+            'user_id' => $user->id,
+            'nombre' => 'Solicitud Doctora',
+        ]);
+    }
+
+    public function test_direct_approval_rejects_pending_user_without_requested_profile(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'pendiente',
+            'requested_role' => null,
+        ]);
+
+        $this->withSession(['access_role' => 'superadmin'])
+            ->put(route('admin.users.approve', $user))
+            ->assertRedirect(route('admin.users.edit', $user))
+            ->assertSessionHasErrors('role');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'role' => 'pendiente',
+        ]);
+    }
+
     public function test_admin_can_assign_assistant_role_from_users_section(): void
     {
         $user = User::factory()->create([
