@@ -33,9 +33,8 @@ class AppointmentCompletionService
         DB::transaction(function () use ($appointment, $catalogTreatment, $completionDate) {
             $adjustedCost = max(
                 0,
-                (float) $catalogTreatment->costo
-                    + (float) $appointment->costo_extra
-                    - (float) $appointment->descuento
+                ((float) $catalogTreatment->costo + (float) $appointment->costo_extra)
+                    * (1 - ((float) $appointment->descuento / 100))
             );
             $descriptionParts = array_filter([
                 $catalogTreatment->descripcion,
@@ -46,7 +45,7 @@ class AppointmentCompletionService
                     ? 'Procedimiento extra: '.$appointment->procedimiento_extra
                     : null,
                 (float) $appointment->descuento > 0
-                    ? 'Descuento aplicado: $'.number_format((float) $appointment->descuento, 2)
+                    ? 'Descuento aplicado: '.number_format((float) $appointment->descuento, 2).'%'
                     : null,
             ]);
 
@@ -76,7 +75,12 @@ class AppointmentCompletionService
 
         return Appointment::with(['patient'])
             ->whereNotIn('estado', ['Cancelada', 'Terminada'])
-            ->when($dentistId, fn ($query) => $query->where('dentist_id', $dentistId))
+            ->when($dentistId, function ($query) use ($dentistId) {
+                $query->where(function ($appointments) use ($dentistId) {
+                    $appointments->where('dentist_id', $dentistId)
+                        ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentistId));
+                });
+            })
             ->whereDate('date', '<=', $now->toDateString())
             ->orderBy('date')
             ->orderBy('time')

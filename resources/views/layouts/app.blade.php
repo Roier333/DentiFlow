@@ -69,9 +69,9 @@
     $currentGender = session('access_gender');
     $clinicSettings = \App\Models\ClinicSetting::current();
     $clinicName = $clinicSettings->clinic_name;
-    $roleLabels = ['admin' => 'Administrador técnico', 'doctor' => $currentGender === 'mujer' ? 'Doctora' : 'Doctor', 'asistente' => 'Asistente'];
+    $roleLabels = ['superadmin' => 'Superadministrador', 'admin' => 'Administrador', 'doctor' => $currentGender === 'mujer' ? 'Doctora' : 'Doctor', 'asistente' => 'Asistente'];
     $allNavigation = [
-        ['route' => 'inicio', 'match' => 'inicio', 'label' => $currentRole === 'admin' ? 'Estado del sistema' : 'Resumen', 'icon' => 'grid', 'roles' => ['admin', 'doctor', 'asistente']],
+        ['route' => 'inicio', 'match' => 'inicio', 'label' => $currentRole === 'superadmin' ? 'Estado del sistema' : 'Resumen', 'icon' => 'grid', 'roles' => ['superadmin', 'admin', 'doctor', 'asistente']],
         ['route' => 'calendario', 'match' => 'calendario', 'label' => 'Calendario', 'icon' => 'calendar'],
         ['route' => 'citas', 'match' => 'citas*', 'label' => 'Citas', 'icon' => 'clock'],
         ['route' => 'pacientes', 'match' => 'pacientes', 'label' => 'Pacientes', 'icon' => 'users'],
@@ -79,14 +79,15 @@
         ['route' => 'pacientes.tratamientos', 'match' => 'pacientes.tratamientos*', 'label' => 'Tratamientos', 'icon' => 'sparkles'],
         ['route' => 'inventario', 'match' => 'inventario*', 'label' => 'Inventario', 'icon' => 'box'],
         ['route' => 'reportes', 'match' => 'reportes*', 'label' => 'Reportes', 'icon' => 'chart', 'roles' => ['doctor']],
-        ['route' => 'admin.calendar', 'match' => 'admin.calendar', 'label' => 'Calendario', 'icon' => 'calendar', 'roles' => ['admin']],
-        ['route' => 'admin.reports', 'match' => 'admin.reports*', 'label' => 'Reportes', 'icon' => 'chart', 'roles' => ['admin']],
-        ['route' => 'admin.users', 'match' => 'admin.users*', 'label' => 'Usuarios', 'icon' => 'users', 'roles' => ['admin']],
-        ['route' => 'admin.system', 'match' => 'admin.system*', 'label' => 'Sistema', 'icon' => 'settings', 'roles' => ['admin']],
-        ['route' => 'admin.preferences', 'match' => ['admin.preferences*', 'admin.settings*'], 'label' => 'Preferencias', 'icon' => 'settings', 'roles' => ['admin']],
+        ['route' => 'admin.calendar', 'match' => 'admin.calendar', 'label' => 'Calendario', 'icon' => 'calendar', 'roles' => ['superadmin']],
+        ['route' => 'admin.reports', 'match' => 'admin.reports*', 'label' => 'Reportes', 'icon' => 'chart', 'roles' => ['superadmin']],
+        ['route' => 'admin.users', 'match' => 'admin.users*', 'label' => 'Usuarios', 'icon' => 'users', 'roles' => ['superadmin']],
+        ['route' => 'admin.system', 'match' => 'admin.system*', 'label' => 'Sistema', 'icon' => 'settings', 'roles' => ['superadmin']],
+        ['route' => 'admin.preferences', 'match' => ['admin.preferences*', 'admin.settings*'], 'label' => 'Preferencias', 'icon' => 'settings', 'roles' => ['superadmin']],
     ];
     $roleNavigation = [
-        'admin' => ['inicio', 'admin.users', 'admin.system', 'admin.preferences'],
+        'superadmin' => ['inicio', 'admin.users', 'admin.system', 'admin.preferences'],
+        'admin' => ['inicio', 'calendario', 'citas', 'pacientes', 'expedientes', 'pacientes.tratamientos', 'inventario', 'reportes'],
         'doctor' => ['inicio', 'calendario', 'citas', 'pacientes', 'expedientes', 'pacientes.tratamientos', 'reportes'],
         'asistente' => $clinicSettings->assistantAllowedSections(),
     ];
@@ -156,12 +157,12 @@
                 </div>
             </div>
             <div class="ml-auto flex items-center gap-2">
-                <span class="hidden text-right sm:block"><span class="block text-xs font-semibold text-slate-700">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM') }}</span><span class="block text-[10px] text-slate-400">Panel administrativo</span></span>
+                <span class="hidden text-right sm:block"><span class="block text-xs font-semibold text-slate-700">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM') }}</span><span class="block text-[10px] text-slate-400">{{ $currentRole === 'superadmin' ? 'Panel técnico' : ($currentRole === 'admin' ? 'Administración clínica' : ($currentRole === 'doctor' ? 'Área clínica' : 'Panel operativo')) }}</span></span>
                 <details class="group relative ml-2">
                     <summary class="relative flex cursor-pointer list-none rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50 hover:text-[#9700cf]" aria-label="Notificaciones">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg>
                         @if($roleNotifications->isNotEmpty())
-                            <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-fuchsia-500 ring-2 ring-white"></span>
+                            <span class="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-fuchsia-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ $roleNotifications->count() > 9 ? '9+' : $roleNotifications->count() }}</span>
                         @endif
                     </summary>
                     <div class="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">

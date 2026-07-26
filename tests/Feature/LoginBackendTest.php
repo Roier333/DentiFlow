@@ -94,7 +94,7 @@ class LoginBackendTest extends TestCase
         $this->get(route('register', ['role' => 'asistente']))
             ->assertOk()
             ->assertSee('Crear cuenta de Asistente')
-            ->assertSee('Crear cuenta y continuar')
+            ->assertSee('Enviar solicitud de acceso')
             ->assertSee('name="role" value="asistente"', false)
             ->assertSee('name="gender"', false)
             ->assertSee('Hombre')
@@ -102,7 +102,7 @@ class LoginBackendTest extends TestCase
             ->assertDontSee('Crear cuenta de Administrador');
     }
 
-    public function test_doctor_registration_is_active_and_creates_dentist_profile(): void
+    public function test_doctor_registration_enters_waiting_room_until_approved(): void
     {
         $this->post(route('register'), [
             'role' => 'doctor',
@@ -111,16 +111,25 @@ class LoginBackendTest extends TestCase
             'gender' => 'mujer',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
-        ])->assertRedirect(route('login'));
+        ])->assertRedirect(route('register.pending'))
+            ->assertSessionHas('pending_email', 'registro.doctor@example.test')
+            ->assertSessionHas('pending_requested_role', 'doctor');
+
+        $this->get(route('register.pending'))
+            ->assertOk()
+            ->assertSee('Sala de espera')
+            ->assertSee('Acceso solicitado: Doctor')
+            ->assertSee('Dra. Registro Nuevo');
 
         $this->assertDatabaseHas('users', [
             'name' => 'Dra. Registro Nuevo',
             'email' => 'registro.doctor@example.test',
-            'role' => 'doctor',
+            'role' => 'pendiente',
+            'requested_role' => 'doctor',
             'gender' => 'mujer',
         ]);
 
-        $this->assertDatabaseHas('dentists', ['nombre' => 'Dra. Registro Nuevo']);
+        $this->assertDatabaseMissing('dentists', ['nombre' => 'Dra. Registro Nuevo']);
     }
 
     public function test_gender_is_stored_in_session_and_personalizes_doctor_label(): void
@@ -167,7 +176,7 @@ class LoginBackendTest extends TestCase
         ]);
     }
 
-    public function test_assistant_registration_is_active_without_dentist_profile(): void
+    public function test_assistant_registration_enters_waiting_room_until_approved(): void
     {
         $this->post(route('register'), [
             'role' => 'asistente',
@@ -176,11 +185,20 @@ class LoginBackendTest extends TestCase
             'gender' => 'mujer',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
-        ])->assertRedirect(route('login'));
+        ])->assertRedirect(route('register.pending'))
+            ->assertSessionHas('pending_email', 'registro.asistente@example.test')
+            ->assertSessionHas('pending_requested_role', 'asistente');
+
+        $this->get(route('register.pending'))
+            ->assertOk()
+            ->assertSee('Sala de espera')
+            ->assertSee('Acceso solicitado: Asistente')
+            ->assertSee('Asistente Nueva');
 
         $this->assertDatabaseHas('users', [
             'email' => 'registro.asistente@example.test',
-            'role' => 'asistente',
+            'role' => 'pendiente',
+            'requested_role' => 'asistente',
             'gender' => 'mujer',
         ]);
         $this->assertDatabaseMissing('dentists', ['nombre' => 'Asistente Nueva']);
@@ -257,14 +275,21 @@ class LoginBackendTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->post('/login', [
+        $response = $this->post('/login', [
             'email' => 'asistente.login@example.test',
             'password' => 'incorrecta',
-        ])->assertSessionHasErrors('email');
+        ]);
+
+        $response
+            ->assertSessionHasErrors('email')
+            ->assertSessionHas('login_credentials_failed', true);
 
         $page = $this->get(route('login'));
         $message = 'Las credenciales no coinciden con nuestros registros.';
         $page->assertSee($message);
+        $page->assertSee('autocomplete="new-password"', false);
+        $page->assertSee("passwordInput.value = '';", false);
+        $page->assertDontSee('value="password"', false);
         $this->assertSame(1, substr_count($page->getContent(), $message));
     }
 

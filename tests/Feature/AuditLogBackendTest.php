@@ -12,7 +12,7 @@ class AuditLogBackendTest extends TestCase
 
     public function test_settings_update_is_audited_when_audit_is_enabled(): void
     {
-        $this->withSession(['access_role' => 'admin', 'access_name' => 'Admin Config'])
+        $this->withSession(['access_role' => 'superadmin', 'access_name' => 'Admin Config'])
             ->post(route('admin.settings.update'), [
                 'clinic_name' => 'Clinica Auditada',
                 'support_email' => 'auditada@dentiflow.test',
@@ -45,7 +45,7 @@ class AuditLogBackendTest extends TestCase
             'administrative_audit_enabled' => false,
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->post(route('admin.settings.update'), [
                 'clinic_name' => 'Clinica Sin Auditoria',
                 'support_email' => 'sin.audit@dentiflow.test',

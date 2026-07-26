@@ -54,12 +54,17 @@ class EnsureRoleAccess
             return redirect()->route('register.pending');
         }
 
-        if ($role !== 'admin' && Str::is('admin.*', $routeName)) {
-            $roleLabel = $role === 'doctor' ? 'Doctor' : ($role === 'asistente' ? 'Asistente' : 'usuario');
+        if ($role !== 'superadmin' && Str::is('admin.*', $routeName)) {
+            $roleLabel = match ($role) {
+                'doctor' => 'Doctor',
+                'asistente' => 'Asistente',
+                'admin' => 'Administrador operativo',
+                default => 'usuario',
+            };
 
             return redirect()->route('login')->with(
                 'warning',
-                'La sesión activa pertenece al perfil '.$roleLabel.'. Para entrar a Administración, inicia sesión con una cuenta de administrador.'
+                'La sesión activa pertenece al perfil '.$roleLabel.'. Para entrar a la administración técnica, inicia sesión con una cuenta de superadministrador.'
             );
         }
 
@@ -69,7 +74,8 @@ class EnsureRoleAccess
 
         $settings = ClinicSetting::current();
         $permissions = [
-            'admin' => ['inicio', 'admin.*', 'dentistas*', 'perfil*', 'logout'],
+            'superadmin' => ['inicio', 'admin.*', 'dentistas*', 'perfil*', 'logout'],
+            'admin' => ['inicio', 'calendario*', 'citas*', 'pacientes*', 'expedientes*', 'reportes*', 'inventario*', 'perfil*', 'logout'],
             'doctor' => ['inicio', 'calendario*', 'citas*', 'pacientes*', 'expedientes*', 'reportes*', 'perfil*', 'logout'],
             'asistente' => $settings->assistantAllowedRoutes(),
         ];
@@ -83,7 +89,7 @@ class EnsureRoleAccess
 
     private function maintenanceBlocks(string $role, string $routeName): bool
     {
-        if ($role === 'admin' || ! ClinicSetting::current()->maintenance_mode_enabled) {
+        if ($role === 'superadmin' || ! ClinicSetting::current()->maintenance_mode_enabled) {
             return false;
         }
 

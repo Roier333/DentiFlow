@@ -102,7 +102,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-slate-600">{{ $paciente['telefono'] }}</td>
+                            <td class="px-5 py-4"><a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="inline-flex items-center gap-2 font-semibold text-[#9700cf] hover:text-[#512569]" aria-label="Llamar a {{ $paciente['nombre'] }}">{{ $paciente['telefono'] }}</a></td>
                             <td class="px-5 py-4 text-slate-600">{{ $paciente->ultima_visita?->format('d/m/Y') ?? 'Nuevo' }}</td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-center">
@@ -147,7 +147,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="truncate text-base font-semibold text-slate-900">{{ $paciente['nombre'] }}</h3>
-                                <p class="mt-1 text-sm text-slate-500">{{ $paciente['telefono'] }}</p>
+                                <a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="mt-1 inline-flex text-sm font-semibold text-[#9700cf]">{{ $paciente['telefono'] }}</a>
                             </div>
                         </div>
                         <div class="shrink-0">
@@ -288,4 +288,3 @@
 })();
 </script>
 @endpush
-

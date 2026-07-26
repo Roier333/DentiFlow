@@ -46,7 +46,7 @@
             @include('partials.flash-success')
 
             <div>
-                <form method="POST" action="{{ route('login') }}" class="rounded-[1.35rem] border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] sm:p-7">
+                <form method="POST" action="{{ route('login') }}" autocomplete="{{ session('login_credentials_failed') ? 'off' : 'on' }}" class="rounded-[1.35rem] border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] sm:p-7">
                     @csrf
 
                     @if ($errors->any())
@@ -79,7 +79,7 @@
                                 <a id="recover-password" href="{{ route('password.forgot') }}" class="text-sm font-semibold text-[#9700cf]">¿Olvidaste tu contraseña?</a>
                             </div>
                             <div class="relative">
-                                <input id="password" type="password" name="password" placeholder="********" autocomplete="current-password" required class="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-4 pr-12 text-base outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                                <input id="password" type="password" name="password" value="" placeholder="********" autocomplete="{{ session('login_credentials_failed') ? 'new-password' : 'current-password' }}" required class="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-4 pr-12 text-base outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
                                 <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-[#9700cf] focus:outline-none" aria-label="Mostrar contraseña" aria-pressed="false">
                                     <svg id="eye-open" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                         <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
@@ -123,6 +123,19 @@
     const togglePassword = document.getElementById('toggle-password');
     const eyeOpen = document.getElementById('eye-open');
     const eyeClosed = document.getElementById('eye-closed');
+
+    @if(session('login_credentials_failed'))
+        // Algunos gestores de contraseñas rellenan el campo después de que carga
+        // la página. En un intento fallido siempre debe quedar vacío.
+        const clearFailedPassword = () => {
+            passwordInput.value = '';
+        };
+
+        clearFailedPassword();
+        window.addEventListener('pageshow', clearFailedPassword);
+        window.setTimeout(clearFailedPassword, 100);
+        window.setTimeout(clearFailedPassword, 500);
+    @endif
 
     togglePassword.addEventListener('click', () => {
         const passwordIsVisible = passwordInput.type === 'text';

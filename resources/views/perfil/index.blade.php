@@ -35,7 +35,7 @@
                     </div>
                     <div class="rounded-2xl bg-[#fbf0ff] p-4">
                         <p class="text-xs font-bold uppercase tracking-wider text-[#ad79d3]">Teléfono</p>
-                        <p class="mt-2 text-sm font-semibold text-slate-800">{{ $usuario['telefono'] }}</p>
+                        <a href="tel:{{ preg_replace('/\D+/', '', $usuario['telefono']) }}" class="mt-2 inline-flex text-sm font-semibold text-[#9700cf] hover:text-[#512569]">{{ $usuario['telefono'] }}</a>
                     </div>
                     <div class="rounded-2xl bg-[#fbf0ff] p-4">
                         <p class="text-xs font-bold uppercase tracking-wider text-[#ad79d3]">Especialidad</p>

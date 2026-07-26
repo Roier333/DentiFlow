@@ -832,7 +832,7 @@ class AppointmentDentistSessionTest extends TestCase
             'time' => '10:00:00',
             'tipo' => 'Limpieza final',
             'estado' => 'Confirmada',
-            'descuento' => 100,
+            'descuento' => 10,
             'procedimiento_extra' => 'Radiografia adicional',
             'costo_extra' => 200,
         ]);
@@ -854,7 +854,7 @@ class AppointmentDentistSessionTest extends TestCase
         $this->assertDatabaseHas('treatments', [
             'appointment_id' => $appointment->id,
             'estado' => 'Realizado',
-            'costo' => 750,
+            'costo' => 765,
         ]);
         $this->assertStringContainsString(
             'Radiografia adicional',
@@ -865,7 +865,7 @@ class AppointmentDentistSessionTest extends TestCase
         $this->withSession($session)
             ->get(route('reportes', ['periodo' => 'Este mes']))
             ->assertOk()
-            ->assertSee('$750');
+            ->assertSee('$765');
     }
 
     public function test_finishing_appointment_accepts_completion_adjustments(): void
@@ -903,7 +903,7 @@ class AppointmentDentistSessionTest extends TestCase
             'access_user_id' => $user->id,
             'access_email' => $user->email,
         ])->post(route('citas.terminar', $appointment), [
-            'descuento' => 50,
+            'descuento' => 10,
             'procedimiento_extra' => 'Pulido adicional',
             'costo_extra' => 100,
             'completion_description' => 'Se aplico sellador y se dieron indicaciones posteriores.',
@@ -911,7 +911,7 @@ class AppointmentDentistSessionTest extends TestCase
 
         $this->assertDatabaseHas('appointments', [
             'id' => $appointment->id,
-            'descuento' => 50,
+            'descuento' => 10,
             'procedimiento_extra' => 'Pulido adicional',
             'costo_extra' => 100,
             'completion_description' => 'Se aplico sellador y se dieron indicaciones posteriores.',
@@ -920,7 +920,7 @@ class AppointmentDentistSessionTest extends TestCase
         $this->assertDatabaseHas('treatments', [
             'appointment_id' => $appointment->id,
             'estado' => 'Realizado',
-            'costo' => 550,
+            'costo' => 540,
         ]);
         $this->assertStringContainsString(
             'Se aplico sellador y se dieron indicaciones posteriores.',
@@ -1082,7 +1082,7 @@ class AppointmentDentistSessionTest extends TestCase
             ->assertOk()
             ->assertSee('Doctor de la sesi', false)
             ->assertDontSee('name="dentista"', false)
-            ->assertDontSee('Dr. No Permitido');
+            ->assertSee('Dr. No Permitido');
 
         $this->withSession($session)->post(route('citas.update', $appointment->id), [
             'paciente' => $patient->nombre,
@@ -1100,5 +1100,68 @@ class AppointmentDentistSessionTest extends TestCase
             'dentist_id' => $ownDentist->id,
             'estado' => 'Confirmada',
         ]);
+    }
+
+    public function test_collaborative_appointment_is_added_to_both_agendas_and_blocks_both_doctors(): void
+    {
+        $doctor = User::factory()->create(['name' => 'Dra. Colaboradora Uno', 'role' => 'doctor']);
+        $otherUser = User::factory()->create(['name' => 'Dr. Colaborador Dos', 'role' => 'doctor']);
+        $primary = Dentist::create(['user_id' => $doctor->id, 'nombre' => $doctor->name, 'telefono' => '2221111101']);
+        $collaborator = Dentist::create(['user_id' => $otherUser->id, 'nombre' => $otherUser->name, 'telefono' => '2221111102']);
+        $patient = Patient::create(['nombre' => 'Paciente Colaborativo', 'telefono' => '2221111103', 'estado' => 'Activo']);
+        Treatment::create([
+            'paciente' => '',
+            'tratamiento' => 'Cirugia colaborativa',
+            'tipo' => 'Cirugia',
+            'fecha' => now()->toDateString(),
+            'estado' => 'Activo',
+            'costo' => 1800,
+        ]);
+        $date = now()->next('Monday')->toDateString();
+        $session = [
+            'access_role' => 'doctor',
+            'access_user_id' => $doctor->id,
+            'access_email' => $doctor->email,
+        ];
+
+        $this->withSession($session)->post(route('citas.store'), [
+            'paciente' => $patient->nombre,
+            'fecha' => $date,
+            'hora' => '10:00',
+            'hora_fin' => '11:00',
+            'tipo' => 'Cirugia colaborativa',
+            'collaborator_dentist_id' => $collaborator->id,
+        ])->assertRedirect(route('citas'));
+
+        $appointment = Appointment::where('patient_id', $patient->id)->firstOrFail();
+        $this->assertSame($primary->id, $appointment->dentist_id);
+        $this->assertDatabaseHas('appointment_dentist', [
+            'appointment_id' => $appointment->id,
+            'dentist_id' => $primary->id,
+            'participation_role' => 'primary',
+        ]);
+        $this->assertDatabaseHas('appointment_dentist', [
+            'appointment_id' => $appointment->id,
+            'dentist_id' => $collaborator->id,
+            'participation_role' => 'collaborator',
+        ]);
+
+        $this->withSession([
+            'access_role' => 'doctor',
+            'access_user_id' => $otherUser->id,
+            'access_email' => $otherUser->email,
+        ])->get(route('calendario', ['date' => $date]))
+            ->assertOk()
+            ->assertSee('Paciente Colaborativo');
+
+        $secondPatient = Patient::create(['nombre' => 'Paciente En Conflicto', 'telefono' => '2221111104', 'estado' => 'Activo']);
+        $this->withSession($session)->from(route('citas.create'))->post(route('citas.store'), [
+            'paciente' => $secondPatient->nombre,
+            'fecha' => $date,
+            'hora' => '10:30',
+            'hora_fin' => '11:30',
+            'tipo' => 'Cirugia colaborativa',
+            'collaborator_dentist_id' => $collaborator->id,
+        ])->assertSessionHasErrors('hora');
     }
 }

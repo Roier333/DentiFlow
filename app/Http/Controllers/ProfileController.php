@@ -20,11 +20,11 @@ class ProfileController extends Controller
         $usuario = $this->profileUser();
         $lastAccess = $usuario->updated_at?->diffForHumans() ?? 'Sin actividad registrada';
 
-        if (session('access_role') === 'admin') {
+        if (session('access_role') === 'superadmin') {
             return view('admin.profile', compact('usuario'));
         }
 
-        if (session('access_role') === 'asistente') {
+        if (in_array(session('access_role'), ['asistente', 'admin'], true)) {
             return view('perfil.asistente', [
                 'usuario' => $this->assistantProfileData($usuario),
                 'actividades' => $this->assistantActivities(),
@@ -54,14 +54,14 @@ class ProfileController extends Controller
     {
         $usuario = $this->profileUser();
 
-        if (session('access_role') === 'admin') {
+        if (session('access_role') === 'superadmin') {
             return view('admin.profile-edit', compact('usuario'));
         }
 
-        if (session('access_role') === 'asistente') {
+        if (in_array(session('access_role'), ['asistente', 'admin'], true)) {
             return view('perfil.editar', [
                 'usuario' => $this->assistantProfileData($usuario),
-                'role' => 'asistente',
+                'role' => session('access_role'),
             ]);
         }
 
@@ -89,7 +89,7 @@ class ProfileController extends Controller
         $usuario->update(['name' => $data['nombre'], 'email' => $data['email']]);
         session(['access_name' => $data['nombre'], 'access_email' => $data['email']]);
 
-        if (session('access_role') === 'asistente') {
+        if (in_array(session('access_role'), ['asistente', 'admin'], true)) {
             $usuario->update([
                 'telefono' => $data['telefono'] ?? null,
                 'puesto' => $data['especialidad'] ?? null,
@@ -280,14 +280,14 @@ class ProfileController extends Controller
 
     private function profileUser(): User
     {
-        if (session('access_role') === 'admin') {
+        if (session('access_role') === 'superadmin') {
             return User::firstOrCreate(
                 ['email' => 'admin@gmail.com'],
-                ['name' => 'Administrador DentiFlow', 'role' => 'admin', 'password' => bcrypt('Admin123!')]
+                ['name' => 'Administrador DentiFlow', 'role' => 'superadmin', 'password' => bcrypt('Admin123!')]
             );
         }
 
-        if (session('access_role') === 'asistente') {
+        if (in_array(session('access_role'), ['asistente', 'admin'], true)) {
             return User::find(session('access_user_id'))
                 ?? User::where('email', session('access_email'))->first()
                 ?? User::firstOrCreate(

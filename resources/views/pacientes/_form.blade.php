@@ -23,7 +23,16 @@
             <div class="grid gap-5 p-6 md:grid-cols-2">
                 <label class="text-sm font-semibold text-slate-700">Nombre completo <span class="text-fuchsia-500">*</span><input name="nombre" value="{{ old('nombre', $paciente['nombre'] ?? '') }}" placeholder="Nombre y apellidos" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+" title="Solo se permiten letras y espacios." oninput="{{ $lettersOnly }}" class="{{ $fieldClass }}"></label>
                 <label class="text-sm font-semibold text-slate-700">Correo electrónico<input type="email" name="email" value="{{ old('email', $paciente['email'] ?? '') }}" placeholder="paciente@correo.com" class="{{ $fieldClass }}"><span class="mt-1.5 block text-[10px] font-normal text-slate-400">Se utilizará para recordatorios y comunicaciones.</span></label>
-                <label class="text-sm font-semibold text-slate-700">Teléfono <span class="text-fuchsia-500">*</span><input type="tel" name="telefono" value="{{ old('telefono', $paciente['telefono'] ?? '') }}" placeholder="2220000000" required inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Ingresa exactamente 10 números." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}"><span class="mt-1.5 block text-[10px] font-normal text-slate-400">Debe contener exactamente 10 números.</span></label>
+                <label class="text-sm font-semibold text-slate-700">
+                    <span class="flex items-center justify-between gap-3">
+                        <span>Teléfono <span class="text-fuchsia-500">*</span></span>
+                        @if($method === 'POST')
+                            <button id="pick-patient-contact" type="button" class="hidden rounded-lg bg-[#f6e8ff] px-3 py-1.5 text-xs font-bold text-[#9700cf] transition hover:bg-[#ead2fb]">Elegir de contactos</button>
+                        @endif
+                    </span>
+                    <input id="patient-phone" type="tel" name="telefono" value="{{ old('telefono', $paciente['telefono'] ?? '') }}" placeholder="2220000000" required inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" title="Ingresa exactamente 10 números." oninput="{{ $numbersOnly }}" class="{{ $fieldClass }}">
+                    <span id="contact-picker-help" class="mt-1.5 block text-[10px] font-normal text-slate-400">Debe contener exactamente 10 números.</span>
+                </label>
                 <label class="text-sm font-semibold text-slate-700">Dirección @if($method === 'POST')<span class="text-fuchsia-500">*</span>@endif<input name="direccion" value="{{ old('direccion', $paciente['direccion'] ?? '') }}" placeholder="Calle, número, colonia y ciudad" @if($method === 'POST') required @endif class="{{ $fieldClass }}"></label>
             </div>
         </section>
@@ -53,5 +62,38 @@
     </form>
 </div>
 
+@if($method === 'POST')
+<script>
+    (() => {
+        const button = document.getElementById('pick-patient-contact');
+        const phoneInput = document.getElementById('patient-phone');
+        const nameInput = document.querySelector('input[name="nombre"]');
+        const help = document.getElementById('contact-picker-help');
+        const supported = 'contacts' in navigator && 'ContactsManager' in window && window.isSecureContext;
+
+        if (!button || !phoneInput || !supported) return;
+        button.classList.remove('hidden');
+
+        button.addEventListener('click', async () => {
+            try {
+                const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+                const contact = contacts[0];
+                if (!contact) return;
+
+                const digits = String(contact.tel?.[0] || '').replace(/\D/g, '').slice(-10);
+                if (digits.length === 10) phoneInput.value = digits;
+                if (nameInput && !nameInput.value.trim() && contact.name?.[0]) nameInput.value = contact.name[0];
+                if (help) help.textContent = digits.length === 10
+                    ? 'Contacto importado. Revisa los datos antes de guardar.'
+                    : 'El contacto no contiene un teléfono válido de 10 dígitos.';
+            } catch (error) {
+                if (error?.name !== 'AbortError' && help) {
+                    help.textContent = 'No fue posible abrir los contactos. Puedes escribir el número manualmente.';
+                }
+            }
+        });
+    })();
+</script>
+@endif
 
 

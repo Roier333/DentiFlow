@@ -20,7 +20,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        if ($request->session()->get('access_role') === 'admin') {
+        if ($request->session()->get('access_role') === 'superadmin') {
             $settings = ClinicSetting::current();
             $roleCounts = User::query()
                 ->selectRaw('role, COUNT(*) as total')
@@ -56,6 +56,7 @@ class DashboardController extends Controller
                 ],
                 'accounts' => [
                     'total' => User::count(),
+                    'superadmins' => (int) ($roleCounts['superadmin'] ?? 0),
                     'admins' => (int) ($roleCounts['admin'] ?? 0),
                     'doctors' => (int) ($roleCounts['doctor'] ?? 0),
                     'assistants' => (int) ($roleCounts['asistente'] ?? 0),
@@ -72,7 +73,7 @@ class DashboardController extends Controller
                 'operations' => [
                     'auditsToday' => AuditLog::whereDate('created_at', now()->toDateString())->count(),
                     'auditTotal' => AuditLog::count(),
-                    'admins' => (int) ($roleCounts['admin'] ?? 0),
+                    'admins' => (int) ($roleCounts['superadmin'] ?? 0),
                     'configurationReady' => filled($settings->clinic_name) && filled($settings->support_email),
                 ],
             ]);
@@ -101,7 +102,9 @@ class DashboardController extends Controller
         }
 
         $today = now()->toDateString();
-        $isDoctor = $request->session()->get('access_role') === 'doctor';
+        $role = $request->session()->get('access_role');
+        $isDoctor = $role === 'doctor';
+        $isOperationalAdmin = $role === 'admin';
         $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
 
         $agendaHoy = $this->scopeAppointmentsForRole(Appointment::with(['patient', 'dentist']), $isDoctor, $doctorDentist)
@@ -245,6 +248,7 @@ class DashboardController extends Controller
             'selectedDate' => $selectedDate,
             'selectedDayEvents' => $selectedDayEvents,
             'weekDays' => $weekDays,
+            'isOperationalAdmin' => $isOperationalAdmin,
         ]));
     }
 
@@ -310,41 +314,75 @@ class DashboardController extends Controller
         }
 
         $isDoctor = $request->session()->get('access_role') === 'doctor';
-        $isAssistant = $request->session()->get('access_role') === 'asistente';
+        $isAssistant = in_array($request->session()->get('access_role'), ['asistente', 'admin'], true);
         $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
+        $agendaMode = $isDoctor && $request->query('agenda') === 'equipo' ? 'equipo' : 'mio';
         $selectedDentist = $isAssistant ? $request->query('dentista', 'Todos') : ($doctorDentist?->id ?? 'Todos');
         $scheduleDentist = $isDoctor
             ? $doctorDentist
             : ($isAssistant && $selectedDentist !== 'Todos' && $selectedDentist !== '' ? Dentist::find($selectedDentist) : null);
         $selectedTreatment = trim((string) $request->query('tratamiento', 'Todos'));
 
-        $appointmentsQuery = Appointment::with(['patient', 'dentist'])
+        $appointmentsQuery = Appointment::with(['patient', 'dentist', 'participatingDentists'])
             ->whereNotIn('estado', ['Cancelada', 'Terminada'])
-            ->when($isDoctor, fn ($query) => $query->where('dentist_id', $doctorDentist?->id ?? 0))
+            ->when($isDoctor && $agendaMode === 'mio', function ($query) use ($doctorDentist) {
+                $dentistId = $doctorDentist?->id ?? 0;
+                $query->where(function ($appointments) use ($dentistId) {
+                    $appointments->where('dentist_id', $dentistId)
+                        ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentistId));
+                });
+            })
             ->when($isAssistant && $selectedDentist !== 'Todos' && $selectedDentist !== '', fn ($query) => $query->where('dentist_id', $selectedDentist))
             ->when($selectedTreatment !== '' && $selectedTreatment !== 'Todos', fn ($query) => $query->where('tipo', $selectedTreatment));
 
         $appointments = $appointmentsQuery
             ->get();
         $serializedAppointments = $appointments
-            ->map(fn(Appointment $appointment) => $this->serializeAppointment($appointment))
+            ->map(function (Appointment $appointment) use ($isDoctor, $doctorDentist, $agendaMode) {
+                $serialized = $this->serializeAppointment($appointment);
+                $collaborators = $appointment->participatingDentists
+                    ->filter(fn (Dentist $dentist) => $dentist->pivot?->participation_role === 'collaborator')
+                    ->pluck('nombre')
+                    ->values();
+                $isCollaborative = $collaborators->isNotEmpty();
+                $isOwn = $appointment->dentist_id === $doctorDentist?->id
+                    || $appointment->participatingDentists->contains('id', $doctorDentist?->id);
+
+                if ($isCollaborative) {
+                    $serialized['color'] = '#0f766e';
+                    $serialized['dentista'] = collect([$appointment->dentist?->nombre])
+                        ->merge($collaborators)
+                        ->filter()
+                        ->unique()
+                        ->join(' + ');
+                } elseif ($isDoctor && $agendaMode === 'equipo' && ! $isOwn) {
+                    $serialized['color'] = '#94a3b8';
+                }
+
+                $serialized['collaborative'] = $isCollaborative;
+                $serialized['other_doctor'] = $isDoctor && ! $isOwn;
+
+                return $serialized;
+            })
             ->values();
         $calendarData = $this->buildCalendar($selectedDate->toDateString(), $serializedAppointments->toArray());
         $calendarData['todayDate'] = now()->toDateString();
 
         $today = now();
         $selectedDay = $selectedDate->toDateString();
-        $todayEvents = $appointments->filter(fn($appointment) => $appointment->date?->toDateString() === $selectedDay)->map(fn($appointment) => $this->serializeAppointment($appointment))->values();
+        $todayEvents = $serializedAppointments
+            ->where('fecha', $selectedDay)
+            ->values();
 
         $weekStart = $selectedDate->copy()->startOfWeek();
         $weekEnd = $weekStart->copy()->addDays(6);
-        $weekEvents = $appointments->filter(function ($appointment) use ($weekStart, $weekEnd) {
-            $date = $appointment->date?->toDateString();
+        $weekEvents = $serializedAppointments->filter(function ($appointment) use ($weekStart, $weekEnd) {
+            $date = $appointment['fecha'];
             return $date >= $weekStart->toDateString() && $date <= $weekEnd->toDateString();
-        })->map(fn($appointment) => $this->serializeAppointment($appointment))->values();
+        })->values();
 
         $blocks = CalendarBlock::with('dentist')
-            ->when($isDoctor, fn ($query) => $query->where('dentist_id', $doctorDentist?->id ?? 0))
+            ->when($isDoctor && $agendaMode === 'mio', fn ($query) => $query->where('dentist_id', $doctorDentist?->id ?? 0))
             ->when($isAssistant && $selectedDentist !== 'Todos' && $selectedDentist !== '', fn ($query) => $query->where('dentist_id', $selectedDentist))
             ->whereBetween('date', [
                 $view === 'mes' ? $selectedDate->copy()->startOfMonth()->toDateString() : $weekStart->toDateString(),
@@ -414,6 +452,7 @@ class DashboardController extends Controller
             'isDoctor' => $isDoctor,
             'isAssistant' => $isAssistant,
             'doctorDentist' => $doctorDentist,
+            'agendaMode' => $agendaMode,
         ]));
     }
 
@@ -531,7 +570,11 @@ class DashboardController extends Controller
     private function scopeAppointmentsForRole($query, bool $isDoctor, ?Dentist $dentist)
     {
         if ($isDoctor) {
-            $query->where('dentist_id', $dentist?->id ?? 0);
+            $dentistId = $dentist?->id ?? 0;
+            $query->where(function ($appointments) use ($dentistId) {
+                $appointments->where('dentist_id', $dentistId)
+                    ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentistId));
+            });
         }
 
         return $query;
@@ -540,7 +583,13 @@ class DashboardController extends Controller
     private function scopeTreatmentsForRole($query, bool $isDoctor, ?Dentist $dentist)
     {
         if ($isDoctor) {
-            $query->whereHas('appointment', fn ($appointmentQuery) => $appointmentQuery->where('dentist_id', $dentist?->id ?? 0));
+            $dentistId = $dentist?->id ?? 0;
+            $query->whereHas('appointment', function ($appointmentQuery) use ($dentistId) {
+                $appointmentQuery->where(function ($appointments) use ($dentistId) {
+                    $appointments->where('dentist_id', $dentistId)
+                        ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentistId));
+                });
+            });
         }
 
         return $query;

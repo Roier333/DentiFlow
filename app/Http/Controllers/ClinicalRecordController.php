@@ -13,6 +13,7 @@ class ClinicalRecordController extends Controller
     {
         $this->authorizeDoctor();
         $data = $request->validate([
+            'dentist_id' => session('access_role') === 'admin' ? 'required|exists:dentists,id' : 'nullable',
             'recorded_at' => 'required|date',
             'reason' => 'required|string|max:255',
             'diagnosis' => 'nullable|string|max:3000',
@@ -22,7 +23,12 @@ class ClinicalRecordController extends Controller
             'next_visit' => 'nullable|date',
         ]);
 
-        $patient->clinicalRecords()->create($data + ['dentist_id' => $this->dentist()?->id]);
+        $dentistId = session('access_role') === 'admin'
+            ? (int) $data['dentist_id']
+            : $this->dentist()?->id;
+        unset($data['dentist_id']);
+
+        $patient->clinicalRecords()->create($data + ['dentist_id' => $dentistId]);
 
         return redirect()->route('pacientes.expediente', ['paciente' => $patient, 'tab' => 'consultas'])
             ->with('success', 'Consulta clínica registrada.');
@@ -54,6 +60,6 @@ class ClinicalRecordController extends Controller
 
     private function authorizeDoctor(): void
     {
-        abort_unless(session('access_role') === 'doctor', 403);
+        abort_unless(in_array(session('access_role'), ['doctor', 'admin'], true), 403);
     }
 }

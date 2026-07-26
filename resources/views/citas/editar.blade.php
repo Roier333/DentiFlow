@@ -152,6 +152,26 @@
                 </div>
             </div>
 
+            <section class="rounded-2xl border border-teal-200 bg-teal-50/60 p-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-teal-800">Cita en colaboración</p>
+                        <p class="mt-1 text-xs leading-5 text-teal-700">La cita aparecerá en ambas agendas. Al guardar se comprobará la disponibilidad de los dos doctores.</p>
+                    </div>
+                    <label class="block w-full lg:max-w-md">
+                        <span class="text-sm font-semibold text-slate-700">Doctor colaborador {!! $fieldDot('collaborator_dentist_id') !!}</span>
+                        <select name="collaborator_dentist_id" class="{{ $fieldClass('collaborator_dentist_id') }}">
+                            <option value="">Sin colaboración</option>
+                            @foreach($collaboratorDentists as $dentist)
+                                <option value="{{ $dentist->id }}" @selected((string) old('collaborator_dentist_id', $selectedCollaboratorId) === (string) $dentist->id)>
+                                    {{ $dentist->nombre }}{{ $dentist->especialidad ? ' · '.$dentist->especialidad : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
+            </section>
+
             <section class="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -166,8 +186,11 @@
                         <p class="mt-1 font-bold text-slate-800">$<span id="edit-base">{{ number_format($baseCost, 2) }}</span></p>
                     </div>
                     <label class="block rounded-2xl bg-white p-4">
-                        <span class="text-xs text-slate-400">Descuento {!! $fieldDot('descuento') !!}</span>
-                        <input id="edit-discount" type="number" name="descuento" min="0" step="0.01" value="{{ old('descuento', $cita['descuento']) }}" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200">
+                        <span class="text-xs text-slate-400">Descuento (%) {!! $fieldDot('descuento') !!}</span>
+                        <span class="mt-2 flex overflow-hidden rounded-xl border bg-white focus-within:ring-2 {{ $errors->has('descuento') ? 'border-red-400 bg-red-50/40 focus-within:ring-red-200' : 'border-slate-200 focus-within:ring-emerald-200' }}">
+                            <input id="edit-discount" type="number" name="descuento" min="0" max="100" step="0.01" value="{{ old('descuento', $cita['descuento']) }}" class="min-w-0 flex-1 px-3 py-2 text-sm outline-none">
+                            <span class="flex items-center border-l border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-400">%</span>
+                        </span>
                     </label>
                 </div>
                 <div class="mt-4 space-y-3" id="extra-treatment-rows">
@@ -262,8 +285,8 @@
                 const additional = Number(row.querySelector('[data-extra-cost]')?.value || 0);
                 return sum + selectedExtraBase(row) + additional;
             }, 0);
-            const discount = Number(editDiscount?.value || 0);
-            const total = Math.max(0, base + extra - discount);
+            const discount = Math.min(100, Math.max(0, Number(editDiscount?.value || 0)));
+            const total = Math.max(0, (base + extra) * (1 - discount / 100));
             if (editBase) editBase.textContent = money(base);
             if (editTotal) editTotal.textContent = money(total);
         };

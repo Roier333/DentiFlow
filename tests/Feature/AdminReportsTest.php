@@ -17,7 +17,7 @@ class AdminReportsTest extends TestCase
     {
         $appointment = $this->finishedAppointmentWithReport();
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.reports'))
             ->assertOk()
             ->assertSee('Configuracion de reportes')
@@ -40,7 +40,7 @@ class AdminReportsTest extends TestCase
             'costo' => 850,
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->put(route('admin.reports.appointments.update', $appointment), [
                 'patient_id' => $newPatient->id,
                 'dentist_id' => $newDentist->id,
@@ -77,7 +77,7 @@ class AdminReportsTest extends TestCase
         $appointment = $this->finishedAppointmentWithReport();
         $report = Treatment::where('appointment_id', $appointment->id)->firstOrFail();
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->delete(route('admin.reports.destroy', $report))
             ->assertRedirect(route('admin.reports'));
 

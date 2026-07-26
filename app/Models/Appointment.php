@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Appointment extends Model
 {
@@ -45,6 +46,19 @@ class Appointment extends Model
     public function dentist(): BelongsTo
     {
         return $this->belongsTo(Dentist::class);
+    }
+
+    public function participatingDentists(): BelongsToMany
+    {
+        return $this->belongsToMany(Dentist::class)
+            ->withPivot('participation_role')
+            ->withTimestamps();
+    }
+
+    public function collaborators(): BelongsToMany
+    {
+        return $this->participatingDentists()
+            ->wherePivot('participation_role', 'collaborator');
     }
 
     public function creator(): BelongsTo

@@ -21,8 +21,19 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Administrador DentiFlow',
-                'role' => 'admin',
+                'role' => 'superadmin',
                 'password' => Hash::make('Admin123!'),
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'administrador@dentiflow.com'],
+            [
+                'name' => 'Administrador Operativo',
+                'role' => 'admin',
+                'password' => Hash::make('Administrador123!'),
+                'telefono' => '2220000002',
+                'puesto' => 'Administracion clinica',
             ]
         );
 

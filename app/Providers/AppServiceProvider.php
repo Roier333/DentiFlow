@@ -90,7 +90,7 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
-            if ($role === 'asistente') {
+            if (in_array($role, ['asistente', 'admin'], true)) {
                 $highlightedAppointments = Appointment::with('patient')
                     ->where('reminder_sent', true)
                     ->whereDate('date', '>=', today())
@@ -123,15 +123,17 @@ class AppServiceProvider extends ServiceProvider
 
                 $notifications = collect($highlightedAppointments)->merge(collect($notifications))->take(5);
 
-                $lowStock = InventoryItem::query()
-                    ->whereColumn('stock', '<=', 'reposicion')
+                $stockAlerts = InventoryItem::query()
+                    ->where('stock', '<=', InventoryItem::STOCK_RUNNING_OUT_MAX)
                     ->orderBy('stock')
+                    ->orderBy('material')
+                    ->limit(5)
                     ->get();
 
-                if ($lowStock->isNotEmpty()) {
+                foreach ($stockAlerts as $stockItem) {
                     $notifications->push([
-                        'title' => $lowStock->count().' materiales con stock bajo',
-                        'detail' => $lowStock->take(2)->pluck('material')->join(', '),
+                        'title' => $stockItem->stockStatusLabel().': '.$stockItem->material,
+                        'detail' => $stockItem->stock.' unidades disponibles',
                         'url' => route('inventario'),
                         'type' => 'inventory',
                     ]);

@@ -7,13 +7,15 @@
     $roleOptions = [
         'doctor' => 'Doctor',
         'asistente' => 'Asistente',
-        'admin' => 'Administrador',
+        'admin' => 'Administrador operativo',
+        'superadmin' => 'Superadministrador',
     ];
 
     $roleBadges = [
         'doctor' => 'bg-[#f6e8ff] text-[#9700cf]',
         'asistente' => 'bg-violet-50 text-violet-700',
-        'admin' => 'bg-slate-900 text-white',
+        'admin' => 'bg-[#ead2fb] text-[#8200b8]',
+        'superadmin' => 'bg-slate-900 text-white',
     ];
 @endphp
 <div class="space-y-6">

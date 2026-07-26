@@ -114,12 +114,12 @@ class ProfileBackendTest extends TestCase
         $this->assertTrue(Hash::check('NuevaPassword123!', $user->fresh()->password));
     }
 
-    public function test_admin_can_open_security_from_profile_and_update_password(): void
+    public function test_superadmin_can_open_security_from_profile_and_update_password(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
         $admin->update(['password' => 'Admin123!']);
         $session = [
-            'access_role' => 'admin',
+            'access_role' => 'superadmin',
             'access_user_id' => $admin->id,
             'access_email' => $admin->email,
             'access_name' => $admin->name,

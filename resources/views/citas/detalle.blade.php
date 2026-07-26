@@ -39,8 +39,9 @@
                 <p class="mt-3 text-2xl font-semibold text-gray-800">{{ $cita['paciente'] }}</p>
             </div>
             <div class="rounded-3xl bg-gray-50 p-6">
-                <p class="text-sm text-gray-500">Dentista</p>
-                <p class="mt-3 text-2xl font-semibold text-gray-800">{{ $cita['dentista'] }}</p>
+                <p class="text-sm text-gray-500">{{ !empty($cita['collaborative']) ? 'Doctores participantes' : 'Dentista' }}</p>
+                <p class="mt-3 text-2xl font-semibold text-gray-800">{{ $cita['dentista'] }}@if(!empty($cita['collaborators'])) + {{ implode(' + ', $cita['collaborators']) }}@endif</p>
+                @if(!empty($cita['collaborative']))<span class="mt-3 inline-flex rounded-full bg-teal-100 px-3 py-1 text-xs font-bold text-teal-700">Cita colaborativa</span>@endif
             </div>
             <div class="rounded-3xl bg-gray-50 p-6">
                 <p class="text-sm text-gray-500">Fecha</p>
@@ -83,7 +84,7 @@
                 </div>
                 <div class="rounded-2xl bg-white p-4">
                     <p class="text-xs text-slate-400">Descuento</p>
-                    <p class="mt-1 font-bold {{ $discount > 0 ? 'text-red-600' : 'text-slate-500' }}">-${{ number_format($discount, 2) }}</p>
+                    <p class="mt-1 font-bold {{ $discount > 0 ? 'text-red-600' : 'text-slate-500' }}">{{ number_format($discount, 2) }}%</p>
                 </div>
             </div>
         </section>

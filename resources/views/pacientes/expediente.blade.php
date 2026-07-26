@@ -11,7 +11,8 @@
         'citas' => 'Citas',
     ];
     $tab = array_key_exists(request('tab', 'resumen'), $availableTabs) ? request('tab', 'resumen') : 'resumen';
-    $isDoctor = session('access_role') === 'doctor';
+    $isDoctor = in_array(session('access_role'), ['doctor', 'admin'], true);
+    $isOperationalAdmin = session('access_role') === 'admin';
     $medical = $patient->medicalHistory;
     $emergency = is_array($patient->contacto_emergencia) ? $patient->contacto_emergencia : [];
     $fieldClass = 'mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/15 disabled:bg-slate-50 disabled:text-slate-400';
@@ -26,7 +27,7 @@
             <div>
                 <p class="text-sm font-semibold text-[#9700cf]">Expediente #{{ str_pad($patient->id, 5, '0', STR_PAD_LEFT) }}</p>
                 <h1 class="text-3xl font-bold tracking-tight text-slate-900">{{ $patient->nombre }}</h1>
-                <p class="mt-1 text-sm text-slate-500">{{ $patient->email ?: 'Sin correo' }} · {{ $patient->telefono ?: 'Sin teléfono' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ $patient->email ?: 'Sin correo' }} @if($patient->telefono) · <a href="tel:{{ preg_replace('/\D+/', '', $patient->telefono) }}" class="font-semibold text-[#9700cf] hover:text-[#512569]">{{ $patient->telefono }}</a>@else · Sin teléfono @endif</p>
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -69,7 +70,7 @@
                 <h2 class="font-bold text-slate-900">Datos personales</h2>
                 <dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2">
                     <div><dt class="text-xs text-slate-400">Correo</dt><dd class="font-semibold">{{ $patient->email ?: 'No registrado' }}</dd></div>
-                    <div><dt class="text-xs text-slate-400">Teléfono</dt><dd class="font-semibold">{{ $patient->telefono ?: 'No registrado' }}</dd></div>
+                    <div><dt class="text-xs text-slate-400">Teléfono</dt><dd class="font-semibold">@if($patient->telefono)<a href="tel:{{ preg_replace('/\D+/', '', $patient->telefono) }}" class="text-[#9700cf] hover:text-[#512569]">{{ $patient->telefono }}</a>@else No registrado @endif</dd></div>
                     <div class="sm:col-span-2"><dt class="text-xs text-slate-400">Dirección</dt><dd class="font-semibold">{{ $patient->direccion ?: 'No registrada' }}</dd></div>
                     <div><dt class="text-xs text-slate-400">Seguro</dt><dd class="font-semibold">{{ $patient->seguro ?: 'Sin seguro' }}</dd></div>
                     <div><dt class="text-xs text-slate-400">Póliza</dt><dd class="font-semibold">{{ $patient->poliza ?: 'No registrada' }}</dd></div>
@@ -80,7 +81,7 @@
                 <div class="mt-5 rounded-xl bg-slate-50 p-4">
                     <p class="font-semibold">{{ $emergency['nombre'] ?? 'No registrado' }}</p>
                     @if(!empty($emergency['relacion']))<p class="text-sm text-slate-500">{{ $emergency['relacion'] }}</p>@endif
-                    @if(!empty($emergency['telefono']))<p class="mt-2 text-sm font-semibold text-[#9700cf]">{{ $emergency['telefono'] }}</p>@endif
+                    @if(!empty($emergency['telefono']))<a href="tel:{{ preg_replace('/\D+/', '', $emergency['telefono']) }}" class="mt-2 inline-flex text-sm font-semibold text-[#9700cf] hover:text-[#512569]">{{ $emergency['telefono'] }}</a>@endif
                 </div>
                 <div class="mt-5 flex justify-between text-xs text-slate-400">
                     <span>Consultas clínicas</span>
@@ -100,6 +101,14 @@
                         </div>
                     </div>
                     <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                        @if($isOperationalAdmin)
+                            <label class="block text-xs font-bold text-slate-700 lg:col-span-2">Doctor responsable
+                                <select name="dentist_id" required class="{{ $fieldClass }}">
+                                    <option value="">Selecciona un doctor</option>
+                                    @foreach($dentists as $dentist)<option value="{{ $dentist->id }}" @selected((string) old('dentist_id') === (string) $dentist->id)>{{ $dentist->nombre }}</option>@endforeach
+                                </select>
+                            </label>
+                        @endif
                         <label class="block text-xs font-bold text-slate-700">Fecha y hora
                             <input type="datetime-local" name="recorded_at" value="{{ old('recorded_at', now()->format('Y-m-d\TH:i')) }}" required class="{{ $fieldClass }}">
                         </label>
@@ -211,7 +220,7 @@
                         <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-5">
                             <dl class="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
                                 <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Procedimiento principal</dt><dd class="mt-1 font-semibold text-slate-700">{{ $appointment->tipo }}</dd></div>
-                                <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Descuento</dt><dd class="mt-1 font-semibold text-slate-700">${{ number_format((float) $appointment->descuento, 2) }}</dd></div>
+                                <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Descuento</dt><dd class="mt-1 font-semibold text-slate-700">{{ number_format((float) $appointment->descuento, 2) }}%</dd></div>
                                 <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Costo adicional</dt><dd class="mt-1 font-semibold text-slate-700">${{ number_format((float) $appointment->costo_extra, 2) }}</dd></div>
                                 <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Procedimiento extra</dt><dd class="mt-1 font-semibold text-slate-700">{{ $appointment->procedimiento_extra ?: 'Ninguno' }}</dd></div>
                                 <div><dt class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Descripci&oacute;n del descuento</dt><dd class="mt-1 whitespace-pre-line font-medium text-slate-700">{{ $appointment->completion_description ?: 'Sin descripci&oacute;n del descuento' }}</dd></div>

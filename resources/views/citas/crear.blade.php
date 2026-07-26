@@ -109,6 +109,26 @@
                 </label>
             </div>
 
+            <section class="rounded-2xl border border-teal-200 bg-teal-50/60 p-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-teal-800">Cita en colaboración</p>
+                        <p class="mt-1 text-xs leading-5 text-teal-700">Opcional. La cita se guardará en ambas agendas y solo se permitirá si los dos doctores tienen disponible todo el horario.</p>
+                    </div>
+                    <label class="block w-full lg:max-w-md">
+                        <span class="text-sm font-semibold text-slate-700">Doctor colaborador {!! $fieldDot('collaborator_dentist_id') !!}</span>
+                        <select id="collaborator-dentist" name="collaborator_dentist_id" class="{{ $fieldClass('collaborator_dentist_id') }}">
+                            <option value="">Sin colaboración</option>
+                            @foreach($collaboratorDentists as $dentist)
+                                <option value="{{ $dentist->id }}" @selected((string) old('collaborator_dentist_id') === (string) $dentist->id)>
+                                    {{ $dentist->nombre }}{{ $dentist->especialidad ? ' · '.$dentist->especialidad : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                </div>
+            </section>
+
             <div id="emergency-treatment-wrapper" class="hidden grid gap-5 md:grid-cols-[1fr_220px]">
                 <label>
                     <span class="text-gray-700">Tratamiento de emergencia {!! $fieldDot('tratamiento_emergencia') !!}</span>

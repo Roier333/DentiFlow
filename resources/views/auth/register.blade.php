@@ -13,7 +13,7 @@
     $accountType = [
         'title' => 'Cuenta de '.($selectedRole === 'doctor' ? 'Doctor' : 'Asistente'),
         'eyebrow' => 'Registro',
-        'description' => 'Tu cuenta quedara activa inmediatamente con el rol de '.($selectedRole === 'doctor' ? 'Doctor' : 'Asistente').'.',
+        'description' => 'Solicita tu acceso como '.($selectedRole === 'doctor' ? 'Doctor' : 'Asistente').'. Administración revisará tu cuenta antes de activarla.',
     ];
 @endphp
 <body class="min-h-screen bg-[#fbf0ff] font-['DM_Sans'] text-[#21152e] antialiased">
@@ -39,7 +39,7 @@
             <div class="max-w-xl py-14 lg:py-16">
                 <p class="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-[#ead2fb]">{{ $accountType['eyebrow'] }}</p>
                 <h1 class="mt-6 max-w-lg text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Registra tu acceso profesional.</h1>
-                <p class="mt-5 max-w-md text-sm leading-7 text-white/62">Registra tus datos y entra directamente al espacio de {{ $selectedRole === 'doctor' ? 'Doctor' : 'Asistente' }}.</p>
+                <p class="mt-5 max-w-md text-sm leading-7 text-white/62">Registra tus datos. Al terminar, te llevaremos a una sala de espera mientras Administración valida tu acceso.</p>
             </div>
 
         </div>
@@ -135,7 +135,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full rounded-xl bg-[#9700cf] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#512569]">Crear cuenta y continuar</button>
+                        <button type="submit" class="w-full rounded-xl bg-[#9700cf] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#512569]">Enviar solicitud de acceso</button>
                     </div>
                 </form>
             </div>

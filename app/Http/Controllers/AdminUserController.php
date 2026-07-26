@@ -27,6 +27,7 @@ class AdminUserController extends Controller
 
         $summary = [
             'total' => User::count(),
+            'superadmins' => User::where('role', 'superadmin')->count(),
             'admins' => User::where('role', 'admin')->count(),
             'doctors' => User::where('role', 'doctor')->count(),
             'assistants' => User::where('role', 'asistente')->count(),
@@ -48,10 +49,19 @@ class AdminUserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', Rule::in(['pendiente', 'doctor', 'asistente', 'admin'])],
+            'role' => ['required', Rule::in(['pendiente', 'doctor', 'asistente', 'admin', 'superadmin'])],
         ]);
 
-        $user->update($data);
+        if ($user->role === 'superadmin' && $data['role'] !== 'superadmin' && User::where('role', 'superadmin')->count() <= 1) {
+            return back()->withErrors(['role' => 'Debe existir al menos un superadministrador activo.'])->withInput();
+        }
+
+        $user->update([
+            ...$data,
+            'requested_role' => $data['role'] === 'pendiente'
+                ? $user->requested_role
+                : null,
+        ]);
 
         if ($user->role === 'doctor') {
             $user->dentist()->updateOrCreate(

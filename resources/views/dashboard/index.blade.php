@@ -4,6 +4,7 @@
 @php
     $role = session('access_role');
     $isDoctor = $role === 'doctor';
+    $isOperationalAdmin = $role === 'admin';
     $statusStyles = [
         'Confirmada' => 'bg-[#f6e8ff] text-[#8200b8]',
         'Pendiente' => 'bg-violet-50 text-violet-700',
@@ -57,8 +58,8 @@
     <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-sm font-semibold text-[#9700cf]">Vista general</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $isDoctor ? 'Resumen clínico' : 'Resumen de recepción' }}</h1>
-            <p class="mt-1 text-sm text-slate-500">{{ $isDoctor ? 'Consulta tu agenda, pacientes y actividad del día.' : 'Revisa citas, pacientes y tareas del consultorio.' }}</p>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $isDoctor ? 'Resumen clínico' : ($isOperationalAdmin ? 'Administración clínica' : 'Resumen de recepción') }}</h1>
+            <p class="mt-1 text-sm text-slate-500">{{ $isDoctor ? 'Consulta tu agenda, pacientes y actividad del día.' : ($isOperationalAdmin ? 'Coordina agenda, atención clínica, pacientes e inventario desde un solo lugar.' : 'Revisa citas, pacientes y tareas del consultorio.') }}</p>
         </div>
         <a href="{{ route('citas.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#9700cf] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2]"><span class="text-lg leading-none">+</span>Nueva cita</a>
     </section>
@@ -87,7 +88,7 @@
             @foreach([
                 [route('pacientes.create'), 'Nuevo paciente', 'Crear expediente clínico', '＋', 'bg-[#ead2fb] text-[#9700cf]'],
                 [route('citas.create'), 'Agendar cita', 'Programar una consulta', '◷', 'bg-[#fbf0ff] text-[#a800f4]'],
-                [$isDoctor ? route('pacientes.tratamiento') : route('inventario'), $isDoctor ? 'Nuevo tratamiento' : 'Ver inventario', $isDoctor ? 'Agregar al catálogo' : 'Revisar existencias', $isDoctor ? '✦' : '□', 'bg-[#fbf0ff] text-[#b27acc]'],
+                [($isDoctor || $isOperationalAdmin) ? route('pacientes.tratamiento') : route('inventario'), ($isDoctor || $isOperationalAdmin) ? 'Nuevo tratamiento' : 'Ver inventario', ($isDoctor || $isOperationalAdmin) ? 'Agregar al catálogo' : 'Revisar existencias', ($isDoctor || $isOperationalAdmin) ? '✦' : '□', 'bg-[#fbf0ff] text-[#b27acc]'],
                 [route('citas'), 'Gestionar citas', 'Consultar la agenda', '☷', 'bg-[#f8e7ff] text-[#a126bb]'],
             ] as [$url, $label, $detail, $icon, $style])
                 <a href="{{ $url }}" class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_4px_15px_rgba(30,34,60,.03)] transition hover:-translate-y-0.5 hover:border-[#d3a2f2] hover:shadow-md">
@@ -288,7 +289,7 @@
             </div>
         </article>
 
-        @if($isDoctor)
+        @if($isDoctor || $isOperationalAdmin)
             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-900">Tratamientos recientes</h2><p class="text-xs text-slate-400">Actividad clínica</p></div><a href="{{ route('pacientes.tratamientos') }}" class="text-xs font-semibold text-[#9700cf]">Ver todos</a></div>
                 <div class="divide-y divide-slate-100">

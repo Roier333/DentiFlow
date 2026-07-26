@@ -32,7 +32,7 @@
                         <tr>
                             <td class="px-5 py-4 font-medium text-slate-800">{{ $dentista->nombre }}</td>
                             <td class="px-5 py-4 text-slate-600">{{ $dentista->especialidad }}</td>
-                            <td class="px-5 py-4 text-slate-600">{{ $dentista->telefono }}</td>
+                            <td class="px-5 py-4"><a href="tel:{{ preg_replace('/\D+/', '', $dentista->telefono) }}" class="font-semibold text-[#9700cf] hover:text-[#512569]">{{ $dentista->telefono }}</a></td>
                             <td class="px-5 py-4 text-slate-600">{{ $dentista->user?->email ?? 'Sin acceso' }}</td>
                             <td class="px-5 py-4">
                                 <a href="{{ route('dentistas.edit', ['id' => $dentista->id]) }}" class="text-[#9700cf] hover:text-[#512569] mr-4">Editar</a>

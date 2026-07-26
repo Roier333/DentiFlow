@@ -1,9 +1,9 @@
 ﻿@extends('layouts.app')
-@section('title', 'Centro de administración')
+@section('title', 'Centro de superadministración')
 @section('content')
 @php
     $healthy = $system['database'] === 'Conectada' && !$settings['maintenance'];
-    $roleLabels = ['admin' => 'Administrador', 'doctor' => 'Doctor', 'asistente' => 'Asistente', 'pendiente' => 'Pendiente'];
+    $roleLabels = ['superadmin' => 'Superadministrador', 'admin' => 'Administrador operativo', 'doctor' => 'Doctor', 'asistente' => 'Asistente', 'pendiente' => 'Pendiente'];
 @endphp
 
 <div class="space-y-6">
@@ -16,10 +16,10 @@
             <div>
                 <div class="flex items-center gap-3">
                     <span class="h-2.5 w-2.5 rounded-full {{ $healthy ? 'bg-emerald-400' : 'bg-amber-400' }}"></span>
-                    <p class="text-xs font-bold uppercase tracking-[.2em] text-white/70">Centro de administración</p>
+                    <p class="text-xs font-bold uppercase tracking-[.2em] text-white/70">Centro de superadministración</p>
                 </div>
                 <h1 class="mt-4 text-3xl font-bold sm:text-4xl">Control del sistema</h1>
-                <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">Gestiona cuentas, seguridad, configuración y servicios técnicos sin acceder a información clínica del consultorio.</p>
+                <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">Gestiona cuentas, seguridad, configuración y servicios técnicos. Este perfil conserva las funciones del administrador técnico anterior.</p>
             </div>
         </div>
     </section>
@@ -44,15 +44,16 @@
             <h2 class="font-bold text-slate-950">Control y seguridad</h2>
             <div class="mt-4 grid grid-cols-2 gap-3">
                 <div class="rounded-xl bg-violet-50 p-4"><p class="text-2xl font-bold text-violet-700">{{ $operations['auditsToday'] }}</p><p class="mt-1 text-xs font-semibold text-slate-600">Eventos hoy</p></div>
-                <div class="rounded-xl bg-fuchsia-50 p-4"><p class="text-2xl font-bold text-fuchsia-700">{{ $operations['admins'] }}</p><p class="mt-1 text-xs font-semibold text-slate-600">Administradores</p></div>
+                <div class="rounded-xl bg-fuchsia-50 p-4"><p class="text-2xl font-bold text-fuchsia-700">{{ $operations['admins'] }}</p><p class="mt-1 text-xs font-semibold text-slate-600">Superadministradores</p></div>
                 <div class="col-span-2 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"><span class="text-xs font-semibold text-slate-600">Preferencias esencial</span><span class="rounded-full px-2.5 py-1 text-[10px] font-bold {{ $operations['configurationReady'] ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $operations['configurationReady'] ? 'Completa' : 'Revisar' }}</span></div>
             </div>
         </article>
     </section>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         @foreach([
             ['Cuentas registradas', $accounts['total'], 'Usuarios del sistema', '#9700cf'],
+            ['Administradores', $accounts['admins'], 'Operación clínica integral', '#0f766e'],
             ['Doctores', $accounts['doctors'], 'Acceso clinico', '#7c25ff'],
             ['Asistentes', $accounts['assistants'], 'Acceso operativo', '#a126bb'],
             ['Cuentas pendientes', $accounts['pending'], 'Requieren revision', $accounts['pending'] ? '#d97706' : '#059669'],

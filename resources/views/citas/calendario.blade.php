@@ -45,9 +45,29 @@
         <div class="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-700">{{ $errors->first() }}</div>
     @endif
 
-    <form method="eET" action="{{ route('calendario') }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    @if($isDoctor)
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="inline-flex w-full rounded-xl bg-slate-100 p-1 sm:w-auto">
+                    <a href="{{ route('calendario', array_merge(request()->except('agenda'), ['agenda' => 'mio'])) }}" class="flex-1 rounded-lg px-5 py-2.5 text-center text-sm font-bold transition sm:flex-none {{ $agendaMode === 'mio' ? 'bg-white text-[#9700cf] shadow-sm' : 'text-slate-500' }}">Mi agenda</a>
+                    <a href="{{ route('calendario', array_merge(request()->except('agenda'), ['agenda' => 'equipo'])) }}" class="flex-1 rounded-lg px-5 py-2.5 text-center text-sm font-bold transition sm:flex-none {{ $agendaMode === 'equipo' ? 'bg-white text-[#9700cf] shadow-sm' : 'text-slate-500' }}">Agenda compartida</a>
+                </div>
+                <div class="flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-[#9700cf]"></span>Mis citas</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-slate-400"></span>Otros doctores</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-teal-700"></span>Cita colaborativa</span>
+                </div>
+            </div>
+            @if($agendaMode === 'equipo')
+                <p class="mt-3 text-xs leading-5 text-slate-500">Puedes consultar los horarios del equipo. Las citas ajenas se muestran en gris y las citas donde participan dos doctores aparecen en verde azulado.</p>
+            @endif
+        </section>
+    @endif
+
+    <form method="GET" action="{{ route('calendario') }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input type="hidden" name="view" value="{{ $currentView }}">
         <input type="hidden" name="date" value="{{ $selectedDate->toDateString() }}">
+        @if($isDoctor)<input type="hidden" name="agenda" value="{{ $agendaMode }}">@endif
         <div class="grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
             @if($isAssistant)
                 <label>
@@ -103,11 +123,11 @@
                                 @foreach($slot['blocks'] as $block)
                                     <div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
                                         <span>{{ $block->type }} &middot; D&iacute;a completo</span>
-                                        <form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
+                                        @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="rounded-lg bg-white/80 px-2.5 py-1 text-[10px] font-bold text-[#9700cf] shadow-sm transition hover:bg-white">Habilitar d&iacute;a</button>
-                                        </form>
+                                        </form>@endif
                                     </div>
                                 @endforeach
                                 @foreach($slot['events'] as $event)
@@ -164,11 +184,11 @@
                                 @foreach($day['blocks'] as $block)
                                     <div class="rounded-xl border px-3 py-2 text-[10px] font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
                                         <span class="block">{{ $block->type }} &middot; D&iacute;a completo</span>
-                                        <form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-2" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
+                                        @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-2" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="w-full rounded-lg bg-white/80 px-2 py-1 text-[9px] font-bold text-[#9700cf] shadow-sm transition hover:bg-white">Habilitar d&iacute;a</button>
-                                        </form>
+                                        </form>@endif
                                     </div>
                                 @endforeach
                                 @forelse($day['events'] as $event)
@@ -210,11 +230,11 @@
                                     @foreach($dayBlocks->take(1) as $block)
                                         <div class="rounded-md border px-2 py-1 text-[9px] font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
                                             <span class="block truncate">{{ $block->type }}</span>
-                                            <form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-1" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
+                                            @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-1" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-full rounded bg-white/80 px-1.5 py-1 text-[8px] font-bold text-[#9700cf] shadow-sm">Habilitar</button>
-                                            </form>
+                                            </form>@endif
                                         </div>
                                     @endforeach
                                     @foreach(array_slice($cell['events'], 0, 3) as $event)
@@ -300,9 +320,13 @@
                     <p><strong>Seguimiento:</strong> {{ $event['reminder_sent'] ? 'Destacada en notificaciones' : 'Sin resaltar' }}</p>
                 </div>
                 <div class="flex flex-wrap justify-end gap-3 border-t border-slate-100 px-6 py-4">
-                    <form method="POST" action="{{ route('citas.recordatorio', ['id' => $event['id']]) }}">@csrf<button class="rounded-xl border {{ $event['reminder_sent'] ? 'border-slate-200 text-slate-600' : 'border-amber-200 text-amber-700' }} px-4 py-2 text-sm font-bold">{{ $event['reminder_sent'] ? 'Quitar resaltado' : 'Resaltar cita' }}</button></form>
-                    <a href="{{ route('citas.show', ['id' => $event['id']]) }}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Abrir</a>
-                    <a href="{{ route('citas.edit', ['id' => $event['id']]) }}" class="rounded-xl bg-[#9700cf] px-4 py-2 text-sm font-bold text-white">Editar</a>
+                    @if(empty($event['other_doctor']))
+                        <form method="POST" action="{{ route('citas.recordatorio', ['id' => $event['id']]) }}">@csrf<button class="rounded-xl border {{ $event['reminder_sent'] ? 'border-slate-200 text-slate-600' : 'border-amber-200 text-amber-700' }} px-4 py-2 text-sm font-bold">{{ $event['reminder_sent'] ? 'Quitar resaltado' : 'Resaltar cita' }}</button></form>
+                        <a href="{{ route('citas.show', ['id' => $event['id']]) }}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Abrir</a>
+                        <a href="{{ route('citas.edit', ['id' => $event['id']]) }}" class="rounded-xl bg-[#9700cf] px-4 py-2 text-sm font-bold text-white">Editar</a>
+                    @else
+                        <span class="mr-auto rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">Agenda de otro doctor · Solo consulta</span>
+                    @endif
                     <button type="button" onclick="this.closest('dialog')?.close()" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-500">Cerrar</button>
                 </div>
             </div>

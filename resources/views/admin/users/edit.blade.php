@@ -32,7 +32,8 @@
                         'pendiente' => 'Pendiente de autorizacion',
                         'doctor' => 'Doctor',
                         'asistente' => 'Asistente',
-                        'admin' => 'Administrador',
+                        'admin' => 'Administrador operativo',
+                        'superadmin' => 'Superadministrador',
                     ] as $value => $label)
                         <option value="{{ $value }}" @selected(old('role', $user->role) === $value)>{{ $label }}</option>
                     @endforeach
@@ -40,6 +41,9 @@
             </label>
             <div class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500 sm:col-span-2">
                 <p class="font-bold text-[#9700cf]">Rol actual: {{ $user->role }}</p>
+                @if($user->requested_role)
+                    <p class="mt-2 font-semibold text-amber-700">Acceso solicitado: {{ $user->requested_role === 'doctor' ? 'Doctor' : 'Asistente' }}</p>
+                @endif
                 <p class="mt-2 text-sm">{{ $user->dentist ? 'Doctor vinculado: '.$user->dentist->nombre : 'Este usuario no esta vinculado a un perfil clinico.' }}</p>
             </div>
         </div>

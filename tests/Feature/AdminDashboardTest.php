@@ -39,7 +39,7 @@ class AdminDashboardTest extends TestCase
             'costo' => 500,
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('inicio', ['dentista' => $dentist->id]))
             ->assertOk()
             ->assertSee('Control del sistema')
@@ -69,7 +69,7 @@ class AdminDashboardTest extends TestCase
             'estado' => 'Confirmada',
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.calendar', ['dentista' => $dentist->id]))
             ->assertOk()
             ->assertViewIs('admin.calendar')
@@ -92,7 +92,7 @@ class AdminDashboardTest extends TestCase
             'maintenance_mode_enabled' => true,
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('inicio'))
             ->assertOk()
             ->assertViewHas('system.status', 'Modo mantenimiento activo');

@@ -76,28 +76,23 @@ Route::post('/register', function (Request $request) {
     ]);
 
     $user = DB::transaction(function () use ($data) {
-        $user = User::create([
+        return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'role' => $data['role'],
+            'role' => 'pendiente',
+            'requested_role' => $data['role'],
             'gender' => $data['gender'],
             'password' => $data['password'],
         ]);
-
-        if ($data['role'] === 'doctor') {
-            Dentist::create([
-                'user_id' => $user->id,
-                'nombre' => $user->name,
-                'telefono' => 'No registrado',
-            ]);
-        }
-
-        return $user;
     });
 
     return redirect()
-        ->route('login')
-        ->with('success', 'Tu cuenta fue creada. Ya puedes iniciar sesion como '.($user->role === 'doctor' ? ($user->gender === 'mujer' ? 'Doctora' : 'Doctor') : 'Asistente').'.');
+        ->route('register.pending')
+        ->with([
+            'pending_name' => $user->name,
+            'pending_email' => $user->email,
+            'pending_requested_role' => $user->requested_role,
+        ]);
 });
 
 Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('password.forgot');

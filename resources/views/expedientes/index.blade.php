@@ -113,7 +113,7 @@
                                         <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ead2fb] text-sm font-bold text-[#9700cf] ring-1 ring-purple-200">{{ $initials ?: 'PX' }}</span>
                                         <div>
                                             <p class="font-semibold text-slate-900">{{ $paciente->nombre }}</p>
-                                            <p class="mt-1 text-sm text-slate-500">{{ $paciente->email ?: $paciente->telefono ?: 'Sin contacto' }}</p>
+                                            <p class="mt-1 text-sm text-slate-500">@if($paciente->email){{ $paciente->email }}@elseif($paciente->telefono)<a href="tel:{{ preg_replace('/\D+/', '', $paciente->telefono) }}" class="font-semibold text-[#9700cf]">{{ $paciente->telefono }}</a>@else Sin contacto @endif</p>
                                         </div>
                                     </div>
                                 </a>
@@ -147,7 +147,7 @@
                         <div class="min-w-0 flex-1">
                             <a href="{{ route('pacientes.expediente', ['paciente' => $paciente, 'tab' => 'resumen']) }}" class="block">
                                 <h3 class="truncate text-base font-semibold text-slate-900">{{ $paciente->nombre }}</h3>
-                                <p class="mt-1 truncate text-sm text-slate-500">{{ $paciente->email ?: $paciente->telefono ?: 'Sin contacto' }}</p>
+                                <p class="mt-1 truncate text-sm text-slate-500">@if($paciente->email){{ $paciente->email }}@elseif($paciente->telefono)<a href="tel:{{ preg_replace('/\D+/', '', $paciente->telefono) }}" class="font-semibold text-[#9700cf]">{{ $paciente->telefono }}</a>@else Sin contacto @endif</p>
                             </a>
                         </div>
                     </div>

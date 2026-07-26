@@ -15,7 +15,7 @@ class AdminSettingsTest extends TestCase
 
     public function test_admin_settings_hide_duration_and_interval_configuration(): void
     {
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.settings'))
             ->assertOk()
             ->assertSee('Agenda y operacion')
@@ -26,7 +26,7 @@ class AdminSettingsTest extends TestCase
 
     public function test_admin_settings_accept_schedule_operation_configuration(): void
     {
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->post(route('admin.settings.update'), [
                 'clinic_name' => 'Clinica DentiFlow',
                 'support_email' => 'soporte@dentiflow.com',
@@ -36,6 +36,7 @@ class AdminSettingsTest extends TestCase
                 'closing_time' => '18:00',
                 'default_appointment_status' => 'Pendiente',
                 'modules' => [0, 1, 3],
+                'assistant_sections' => array_keys(ClinicSetting::ASSISTANT_SECTION_OPTIONS),
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -65,7 +66,7 @@ class AdminSettingsTest extends TestCase
             'default_appointment_status' => 'Confirmada',
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.settings'))
             ->assertOk()
             ->assertSee('Clinica Demo')
@@ -145,7 +146,7 @@ class AdminSettingsTest extends TestCase
             'maintenance_mode_enabled' => true,
         ]);
 
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.settings'))
             ->assertOk()
             ->assertSee('Modo de mantenimiento');

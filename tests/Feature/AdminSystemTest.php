@@ -13,7 +13,7 @@ class AdminSystemTest extends TestCase
 
     public function test_admin_can_open_system_management_without_clinical_information(): void
     {
-        $this->withSession(['access_role' => 'admin'])
+        $this->withSession(['access_role' => 'superadmin'])
             ->get(route('admin.system'))
             ->assertOk()
             ->assertSee('Gesti&oacute;n del sistema', false)
@@ -35,7 +35,7 @@ class AdminSystemTest extends TestCase
     public function test_doctor_is_prompted_to_switch_account_before_entering_admin_and_can_then_login_as_admin(): void
     {
         $doctor = User::factory()->create(['role' => 'doctor', 'password' => 'Doctor123!']);
-        $admin = User::factory()->create(['role' => 'admin', 'password' => 'Admin123!']);
+        $admin = User::factory()->create(['role' => 'superadmin', 'password' => 'Admin123!']);
 
         $this->post(route('login'), [
             'email' => $doctor->email,
@@ -50,7 +50,7 @@ class AdminSystemTest extends TestCase
             'email' => $admin->email,
             'password' => 'Admin123!',
         ])->assertRedirect(route('inicio'))
-            ->assertSessionHas('access_role', 'admin')
+            ->assertSessionHas('access_role', 'superadmin')
             ->assertSessionHas('access_user_id', $admin->id);
 
         $this->get(route('admin.system'))
@@ -60,7 +60,7 @@ class AdminSystemTest extends TestCase
 
     public function test_admin_can_clear_cache_and_the_action_is_audited(): void
     {
-        $this->withSession(['access_role' => 'admin', 'access_name' => 'Admin Cache'])
+        $this->withSession(['access_role' => 'superadmin', 'access_name' => 'Admin Cache'])
             ->post(route('admin.system.cache'))
             ->assertRedirect()
             ->assertSessionHas('success', fn (string $message) => str_contains($message, 'Se liberaron'));

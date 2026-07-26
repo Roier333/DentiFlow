@@ -15,7 +15,7 @@ class DentistBackendTest extends TestCase
 
     public function test_creating_dentist_generates_default_weekly_schedule(): void
     {
-        $response = $this->withSession(['access_role' => 'admin'])->post(route('dentistas.store'), [
+        $response = $this->withSession(['access_role' => 'superadmin'])->post(route('dentistas.store'), [
             'nombre' => 'Dra. Agenda Nueva',
             'especialidad' => 'Ortodoncia',
             'telefono' => '2220000000',
@@ -53,7 +53,7 @@ class DentistBackendTest extends TestCase
             'telefono' => '2220000000',
         ]);
 
-        $response = $this->withSession(['access_role' => 'admin'])->post(route('dentistas.store'), [
+        $response = $this->withSession(['access_role' => 'superadmin'])->post(route('dentistas.store'), [
             'nombre' => 'Dr. Repetido',
             'especialidad' => 'General',
             'telefono' => '',
@@ -66,7 +66,7 @@ class DentistBackendTest extends TestCase
 
     public function test_new_dentist_can_login_with_created_doctor_account(): void
     {
-        $this->withSession(['access_role' => 'admin'])->post(route('dentistas.store'), [
+        $this->withSession(['access_role' => 'superadmin'])->post(route('dentistas.store'), [
             'nombre' => 'Dra. Acceso Propio',
             'especialidad' => 'Endodoncia',
             'telefono' => '2220000002',
@@ -100,7 +100,7 @@ class DentistBackendTest extends TestCase
             'telefono' => '2220000003',
         ]);
 
-        $this->withSession(['access_role' => 'admin'])->put(route('dentistas.update', $dentist->id), [
+        $this->withSession(['access_role' => 'superadmin'])->put(route('dentistas.update', $dentist->id), [
             'nombre' => 'Dr. Sin Acceso',
             'especialidad' => 'General',
             'telefono' => '2220000003',
@@ -142,7 +142,7 @@ class DentistBackendTest extends TestCase
             'estado' => 'Pendiente',
         ]);
 
-        $response = $this->withSession(['access_role' => 'admin'])->get(route('dentistas.delete', ['id' => $dentist->id]));
+        $response = $this->withSession(['access_role' => 'superadmin'])->get(route('dentistas.delete', ['id' => $dentist->id]));
 
         $response->assertRedirect(route('dentistas'));
         $response->assertSessionHasErrors('dentista');

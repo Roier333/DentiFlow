@@ -23,7 +23,7 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
-            'role' => 'nullable|in:doctor,asistente,admin',
+            'role' => 'nullable|in:doctor,asistente,admin,superadmin',
         ], [
             'email.required' => 'El correo electronico es obligatorio.',
             'email.email' => 'Ingresa un correo electronico valido.',
@@ -41,15 +41,16 @@ class LoginController extends Controller
 
             report($exception);
 
-            return response(
-                'El servicio de base de datos no esta disponible temporalmente. Intenta de nuevo en unos segundos.',
-                503,
-                ['Retry-After' => '10'],
-            );
+            return response()
+                ->view('errors.database-unavailable', status: 503)
+                ->header('Retry-After', '10');
         }
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            return back()->withErrors(['email' => 'Las credenciales no coinciden con nuestros registros.'])->withInput($request->only('email'));
+            return back()
+                ->withErrors(['email' => 'Las credenciales no coinciden con nuestros registros.'])
+                ->withInput($request->only('email'))
+                ->with('login_credentials_failed', true);
         }
 
         if ($user->role === 'pendiente') {
@@ -60,13 +61,21 @@ class LoginController extends Controller
                 ->with([
                     'pending_name' => $user->name,
                     'pending_email' => $user->email,
+                    'pending_requested_role' => $user->requested_role,
                 ]);
         }
 
         $selectedRole = $request->input('role');
         if ($selectedRole && $user->role !== $selectedRole) {
+            $roleLabel = match ($selectedRole) {
+                'doctor' => 'Doctor',
+                'asistente' => 'Asistente',
+                'superadmin' => 'Superadministrador',
+                default => 'Administrador',
+            };
+
             return back()
-                ->withErrors(['email' => 'Esta cuenta no pertenece al acceso de '.($selectedRole === 'doctor' ? 'Doctor' : ($selectedRole === 'asistente' ? 'Asistente' : 'Administrador')).'.'])
+                ->withErrors(['email' => 'Esta cuenta no pertenece al acceso de '.$roleLabel.'.'])
                 ->withInput($request->only('email', 'role'));
         }
 

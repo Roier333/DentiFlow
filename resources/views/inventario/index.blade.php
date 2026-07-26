@@ -17,7 +17,7 @@
         <div class="rounded-3xl bg-white p-6 shadow-lg">
             <p class="text-sm text-gray-500">Productos en alerta</p>
             <p class="mt-4 text-4xl font-bold text-[#9700cf]">{{ $alertas->count() }}</p>
-            <p class="mt-2 text-sm text-gray-500">Materiales que requieren reposición inmediata.</p>
+            <p class="mt-2 text-sm text-gray-500">Materiales con 5 unidades o menos.</p>
         </div>
         <div class="rounded-3xl bg-white p-6 shadow-lg">
             <p class="text-sm text-gray-500">Proveedores activos</p>
@@ -64,13 +64,14 @@
                             <td class="px-6 py-4 text-gray-700">${{ number_format($producto['costo'], 2, ',', '.') }}</td>
                             <td class="px-6 py-4 text-gray-700">{{ $producto['proveedor'] ?: 'Sin proveedor' }}</td>
                             <td class="px-6 py-4">
-                                @if(($producto['proveedor'] ?? '') === 'Sin proveedor')
-                                    <span class="inline-flex rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-700 ring-1 ring-fuchsia-100">Sin proveedor</span>
-                                @elseif($producto->needsRestock())
-                                    <span class="inline-flex rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-100">Stock bajo</span>
-                                @else
-                                    <span class="inline-flex rounded-full bg-[#f6e8ff] px-3 py-1 text-xs font-semibold text-[#8200b8] ring-1 ring-[#ead2fb]">Con proveedor</span>
-                                @endif
+                                @php($stockStatus = $producto->stockStatus())
+                                <span @class([
+                                    'inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1',
+                                    'bg-red-50 text-red-700 ring-red-200' => $stockStatus === 'low',
+                                    'bg-amber-50 text-amber-700 ring-amber-200' => $stockStatus === 'running_out',
+                                    'bg-sky-50 text-sky-700 ring-sky-200' => $stockStatus === 'available',
+                                    'bg-emerald-50 text-emerald-700 ring-emerald-200' => $stockStatus === 'high',
+                                ])>{{ $producto->stockStatusLabel() }}</span>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-center">
@@ -107,7 +108,11 @@
                                 <p class="font-semibold text-gray-800">{{ $item['material'] }}</p>
                                 <p class="text-sm text-gray-500">Proveedor: {{ $item['proveedor'] ?: 'Sin proveedor' }}</p>
                             </div>
-                            <span class="rounded-full bg-fuchsia-100 px-3 py-1 text-sm text-fuchsia-700">{{ ($item['proveedor'] ?? '') === 'Sin proveedor' ? 'Sin proveedor' : 'Stock bajo' }}</span>
+                            <span @class([
+                                'rounded-full px-3 py-1 text-sm font-semibold',
+                                'bg-red-100 text-red-700' => $item->stockStatus() === 'low',
+                                'bg-amber-100 text-amber-700' => $item->stockStatus() === 'running_out',
+                            ])>{{ $item->stockStatusLabel() }}</span>
                         </div>
                         <p class="mt-3 text-gray-700">Cantidad disponible: {{ $item['stock'] }} · Nivel objetivo: {{ $item['reposicion'] }}</p>
                     </div>

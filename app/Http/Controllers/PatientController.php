@@ -209,7 +209,11 @@ class PatientController extends Controller
             ->orderBy('time')
             ->first();
 
-        return view('pacientes.expediente', compact('patient', 'nextAppointment'));
+        $dentists = $request->session()->get('access_role') === 'admin'
+            ? Dentist::orderBy('nombre')->get(['id', 'nombre'])
+            : collect();
+
+        return view('pacientes.expediente', compact('patient', 'nextAppointment', 'dentists'));
     }
 
     public function history(Request $request)

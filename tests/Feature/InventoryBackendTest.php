@@ -133,7 +133,59 @@ class InventoryBackendTest extends TestCase
         $response->assertOk();
         $response->assertSee('Productos en alerta');
         $response->assertSee('Guantes');
-        $this->assertTrue(InventoryItem::first()->needsRestock());
+        $this->assertTrue(
+            InventoryItem::where('material', 'Guantes')->firstOrFail()->needsRestock()
+        );
+    }
+
+    public function test_stock_status_uses_live_quantity_thresholds(): void
+    {
+        $item = new InventoryItem(['stock' => 12]);
+        $this->assertSame('Stock alto', $item->stockStatusLabel());
+
+        $item->stock = 8;
+        $this->assertSame('Stock disponible', $item->stockStatusLabel());
+
+        $item->stock = 5;
+        $this->assertSame('Por agotarse', $item->stockStatusLabel());
+        $this->assertTrue($item->needsRestock());
+
+        $item->stock = 2;
+        $this->assertSame('Stock bajo', $item->stockStatusLabel());
+        $this->assertTrue($item->needsRestock());
+    }
+
+    public function test_assistant_bell_shows_low_and_running_out_stock_notifications(): void
+    {
+        InventoryItem::create([
+            'material' => 'Anestesia critica',
+            'stock' => 2,
+            'reposicion' => 10,
+            'costo' => 100,
+            'proveedor' => 'Proveedor Dental',
+        ]);
+        InventoryItem::create([
+            'material' => 'Resina por agotarse',
+            'stock' => 5,
+            'reposicion' => 10,
+            'costo' => 100,
+            'proveedor' => 'Proveedor Dental',
+        ]);
+        InventoryItem::create([
+            'material' => 'Guantes disponibles',
+            'stock' => 10,
+            'reposicion' => 20,
+            'costo' => 100,
+            'proveedor' => 'Proveedor Dental',
+        ]);
+
+        $this->withSession(['access_role' => 'asistente'])
+            ->get(route('inventario'))
+            ->assertOk()
+            ->assertSee('Stock bajo: Anestesia critica')
+            ->assertSee('Por agotarse: Resina por agotarse')
+            ->assertDontSee('Stock bajo: Guantes disponibles')
+            ->assertDontSee('Por agotarse: Guantes disponibles');
     }
 
     public function test_inventory_provider_costs_leave_missing_provider_name_blank(): void

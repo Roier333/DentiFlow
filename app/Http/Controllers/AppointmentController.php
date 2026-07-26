@@ -39,10 +39,10 @@ class AppointmentController extends Controller
             $order = 'fecha_asc';
         }
 
-        $query = $this->scopeAppointmentsForCurrentUser(Appointment::with(['patient', 'dentist']));
+        $query = $this->scopeAppointmentsForCurrentUser(Appointment::with(['patient', 'dentist', 'participatingDentists']));
 
         if ($currentDentist) {
-            $query->where('dentist_id', $currentDentist->id);
+            $this->scopeForDentistParticipation($query, $currentDentist->id);
         }
 
         if ($search !== '') {
@@ -88,7 +88,7 @@ class AppointmentController extends Controller
         ]);
 
         $baseCitas = $this->scopeAppointmentsForCurrentUser(Appointment::query())
-            ->when($currentDentist, fn ($query) => $query->where('dentist_id', $currentDentist->id))
+            ->when($currentDentist, fn ($query) => $this->scopeForDentistParticipation($query, $currentDentist->id))
             ->get();
         $today = now()->toDateString();
 
@@ -150,6 +150,10 @@ class AppointmentController extends Controller
             'dentistas' => $dentistas,
             'tratamientos' => $tratamientos,
             'currentDentist' => $currentDentist,
+            'collaboratorDentists' => Dentist::query()
+                ->when($currentDentist, fn ($query) => $query->whereKeyNot($currentDentist->id))
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'especialidad']),
             'defaultDate' => $defaultStart->toDateString(),
             'defaultStartTime' => $defaultStart->format('H:i'),
             'defaultEndTime' => $defaultEnd->format('H:i'),
@@ -163,8 +167,8 @@ class AppointmentController extends Controller
         $search = trim($request->query('search', ''));
         $estado = $request->query('estado', 'Todos');
 
-        $appointments = $this->scopeAppointmentsForCurrentUser(Appointment::with(['patient', 'dentist']))
-            ->when($currentDentist, fn ($query) => $query->where('dentist_id', $currentDentist->id))
+        $appointments = $this->scopeAppointmentsForCurrentUser(Appointment::with(['patient', 'dentist', 'participatingDentists']))
+            ->when($currentDentist, fn ($query) => $this->scopeForDentistParticipation($query, $currentDentist->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($searchQuery) use ($search) {
                     $searchQuery->whereHas('patient', fn ($patientQuery) => $patientQuery->where('nombre', 'like', "%{$search}%"))
@@ -191,7 +195,7 @@ class AppointmentController extends Controller
 
     public function restore($id)
     {
-        $appointment = Appointment::with(['patient', 'dentist'])->findOrFail($id);
+        $appointment = Appointment::with(['patient', 'dentist', 'participatingDentists'])->findOrFail($id);
         $this->authorizeAppointmentAccess($appointment);
 
         if ($appointment->estado !== 'Cancelada') {
@@ -238,18 +242,30 @@ class AppointmentController extends Controller
             'tipo' => 'required|string|max:255',
             'tratamiento_emergencia' => 'nullable|string|max:255',
             'costo_emergencia' => 'nullable|numeric|min:0',
+            'collaborator_dentist_id' => 'nullable|integer|exists:dentists,id',
         ], $this->appointmentValidationMessages(), $this->appointmentValidationAttributes());
 
         $treatmentName = $this->resolveAppointmentTreatmentName($data['tipo'], $data['tratamiento_emergencia'] ?? null, $data['costo_emergencia'] ?? null);
         $patient = $this->resolvePatient($data['paciente']);
         $dentist = $currentDentist ?? $this->resolveDentist($data['dentista']);
+        $collaborator = ! empty($data['collaborator_dentist_id'])
+            ? Dentist::findOrFail($data['collaborator_dentist_id'])
+            : null;
+        if ($collaborator?->is($dentist)) {
+            return back()->withErrors(['collaborator_dentist_id' => 'El doctor colaborador debe ser diferente al doctor principal.'])->withInput();
+        }
         [$time, $endTime] = $this->appointmentTimeRange($data['fecha'], $data['hora'], $data['hora_fin'] ?? null);
         $this->ensureAppointmentIsSchedulable($dentist, $data['fecha'], $time, $endTime);
+        if ($collaborator) {
+            $this->ensureAppointmentIsSchedulable($collaborator, $data['fecha'], $time, $endTime);
+        }
 
-        if ($conflictingAppointment = $this->findConflictingAppointment($dentist, $data['fecha'], $time, $endTime)) {
-            return back()
-                ->withErrors(['hora' => $this->conflictMessage($conflictingAppointment)])
-                ->withInput();
+        foreach (array_filter([$dentist, $collaborator]) as $participant) {
+            if ($conflictingAppointment = $this->findConflictingAppointment($participant, $data['fecha'], $time, $endTime)) {
+                return back()
+                    ->withErrors(['hora' => $this->conflictMessage($conflictingAppointment, $participant)])
+                    ->withInput();
+            }
         }
 
         if ($conflictingAppointment = $this->findPatientConflictingAppointment($patient, $data['fecha'], $time, $endTime)) {
@@ -258,13 +274,15 @@ class AppointmentController extends Controller
                 ->withInput();
         }
 
-        if ($conflictingBlock = $this->findConflictingCalendarBlock($dentist, $data['fecha'], $time, $endTime)) {
-            return back()
-                ->withErrors(['hora' => $this->calendarBlockConflictMessage($conflictingBlock)])
-                ->withInput();
+        foreach (array_filter([$dentist, $collaborator]) as $participant) {
+            if ($conflictingBlock = $this->findConflictingCalendarBlock($participant, $data['fecha'], $time, $endTime)) {
+                return back()
+                    ->withErrors(['hora' => $this->calendarBlockConflictMessage($conflictingBlock).' Doctor: '.$participant->nombre.'.'])
+                    ->withInput();
+            }
         }
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'patient_id' => $patient->id,
             'dentist_id' => $dentist->id,
             'created_by_user_id' => session('access_user_id'),
@@ -275,8 +293,11 @@ class AppointmentController extends Controller
             'estado' => ClinicSetting::current()->default_appointment_status,
             'color' => $this->treatmentColor($treatmentName),
         ]);
+        $this->syncAppointmentParticipants($appointment, $dentist, $collaborator);
 
-        return redirect()->route('citas')->with('success', 'Cita creada correctamente.');
+        return redirect()->route('citas')->with('success', $collaborator
+            ? 'Cita colaborativa creada correctamente en las agendas de ambos doctores.'
+            : 'Cita creada correctamente.');
     }
 
     public function edit($id)
@@ -299,6 +320,11 @@ class AppointmentController extends Controller
             'pacientes' => $pacientes,
             'dentistas' => $dentistas,
             'currentDentist' => $currentDentist,
+            'collaboratorDentists' => Dentist::query()
+                ->whereKeyNot($currentDentist?->id ?? $appointment->dentist_id)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'especialidad']),
+            'selectedCollaboratorId' => $appointment->collaborators()->value('dentists.id'),
             'baseCost' => (float) ($catalogTreatment?->costo ?? 0),
             'catalogTreatments' => $catalogTreatments,
             'backUrl' => $this->resolveBackUrl(request(), $appointment),
@@ -321,15 +347,22 @@ class AppointmentController extends Controller
             'hora_fin' => 'nullable|date_format:H:i',
             'tipo' => 'required|string|exists:treatments,tratamiento',
             'estado' => 'required|string|in:'.implode(',', self::VALID_STATUSES),
-            'descuento' => 'nullable|numeric|min:0',
+            'descuento' => 'nullable|numeric|min:0|max:100',
             'procedimiento_extra' => 'nullable',
             'procedimiento_extra.*' => 'nullable|string|max:255',
             'costo_extra' => 'nullable',
             'costo_extra.*' => 'nullable|numeric|min:0',
+            'collaborator_dentist_id' => 'nullable|integer|exists:dentists,id',
         ], $this->appointmentValidationMessages(), $this->appointmentValidationAttributes());
 
         $patient = $this->resolvePatient($data['paciente']);
         $dentist = $currentDentist ?? $this->resolveDentist($data['dentista']);
+        $collaborator = ! empty($data['collaborator_dentist_id'])
+            ? Dentist::findOrFail($data['collaborator_dentist_id'])
+            : null;
+        if ($collaborator?->is($dentist)) {
+            return back()->withErrors(['collaborator_dentist_id' => 'El doctor colaborador debe ser diferente al doctor principal.'])->withInput();
+        }
         $catalogTreatment = Treatment::whereNull('appointment_id')
             ->whereNull('patient_id')
             ->where('tratamiento', $data['tipo'])
@@ -340,20 +373,20 @@ class AppointmentController extends Controller
             $request->input('costo_extra', [])
         );
         $discount = (float) ($data['descuento'] ?? 0);
-        if ($discount > $baseCost + $extraCost) {
-            return back()
-                ->withErrors(['descuento' => 'El descuento no puede ser mayor al costo total de la cita.'])
-                ->withInput();
-        }
         [$time, $endTime] = $this->appointmentTimeRange($data['fecha'], $data['hora'], $data['hora_fin'] ?? null);
         if (! $isHistorical) {
             $this->ensureAppointmentIsSchedulable($dentist, $data['fecha'], $time, $endTime);
+            if ($collaborator) {
+                $this->ensureAppointmentIsSchedulable($collaborator, $data['fecha'], $time, $endTime);
+            }
         }
 
-        if (! $isHistorical && $conflictingAppointment = $this->findConflictingAppointment($dentist, $data['fecha'], $time, $endTime, $appointment->id)) {
-            return back()
-                ->withErrors(['hora' => $this->conflictMessage($conflictingAppointment)])
-                ->withInput();
+        foreach (array_filter([$dentist, $collaborator]) as $participant) {
+            if (! $isHistorical && $conflictingAppointment = $this->findConflictingAppointment($participant, $data['fecha'], $time, $endTime, $appointment->id)) {
+                return back()
+                    ->withErrors(['hora' => $this->conflictMessage($conflictingAppointment, $participant)])
+                    ->withInput();
+            }
         }
 
         if (! $isHistorical && $conflictingAppointment = $this->findPatientConflictingAppointment($patient, $data['fecha'], $time, $endTime, $appointment->id)) {
@@ -362,10 +395,12 @@ class AppointmentController extends Controller
                 ->withInput();
         }
 
-        if (! $isHistorical && $conflictingBlock = $this->findConflictingCalendarBlock($dentist, $data['fecha'], $time, $endTime)) {
-            return back()
-                ->withErrors(['hora' => $this->calendarBlockConflictMessage($conflictingBlock)])
-                ->withInput();
+        foreach (array_filter([$dentist, $collaborator]) as $participant) {
+            if (! $isHistorical && $conflictingBlock = $this->findConflictingCalendarBlock($participant, $data['fecha'], $time, $endTime)) {
+                return back()
+                    ->withErrors(['hora' => $this->calendarBlockConflictMessage($conflictingBlock).' Doctor: '.$participant->nombre.'.'])
+                    ->withInput();
+            }
         }
 
         $appointment->update([
@@ -381,12 +416,13 @@ class AppointmentController extends Controller
             'procedimiento_extra' => $extraProcedure,
             'costo_extra' => $extraCost,
         ]);
+        $this->syncAppointmentParticipants($appointment, $dentist, $collaborator);
 
         if ($isHistorical && $completedTreatment = Treatment::where('appointment_id', $appointment->id)->first()) {
             $descriptionParts = array_filter([
                 $catalogTreatment?->descripcion,
                 $extraProcedure ? 'Procedimiento extra: '.$extraProcedure : null,
-                $discount > 0 ? 'Descuento aplicado: $'.number_format($discount, 2) : null,
+                $discount > 0 ? 'Descuento aplicado: '.number_format($discount, 2).'%' : null,
             ]);
             $completedTreatment->update([
                 'patient_id' => $patient->id,
@@ -394,7 +430,7 @@ class AppointmentController extends Controller
                 'tratamiento' => $this->displayTreatmentName($data['tipo'], $extraProcedure),
                 'tipo' => $catalogTreatment?->tipo ?? $completedTreatment->tipo,
                 'fecha' => $data['fecha'],
-                'costo' => max(0, $baseCost + $extraCost - $discount),
+                'costo' => max(0, ($baseCost + $extraCost) * (1 - ($discount / 100))),
                 'descripcion' => implode(' | ', $descriptionParts) ?: null,
             ]);
         }
@@ -456,7 +492,7 @@ class AppointmentController extends Controller
         }
 
         $data = $request->validate([
-            'descuento' => 'nullable|numeric|min:0',
+            'descuento' => 'nullable|numeric|min:0|max:100',
             'procedimiento_extra' => 'nullable|string|max:255',
             'costo_extra' => 'nullable|numeric|min:0|required_with:procedimiento_extra',
             'completion_description' => 'nullable|string|max:2000',
@@ -484,12 +520,6 @@ class AppointmentController extends Controller
         $completionDescription = $request->has('completion_description')
             ? (trim((string) ($data['completion_description'] ?? '')) ?: null)
             : $appointment->completion_description;
-
-        if ($discount > $baseCost + $extraCost) {
-            return back()
-                ->withErrors(['descuento' => 'El descuento no puede ser mayor al costo total de la cita.'])
-                ->withInput();
-        }
 
         $appointment->update([
             'descuento' => $discount,
@@ -545,20 +575,25 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'La cita ya esta programada en ese horario.'], 422);
         }
 
-        if ($message = $this->schedulableError($appointment->dentist, $data['fecha'], $time, $endTime)) {
-            return response()->json(['message' => $message], 422);
-        }
+        $participants = $appointment->participatingDentists->isNotEmpty()
+            ? $appointment->participatingDentists
+            : collect([$appointment->dentist]);
+        foreach ($participants as $participant) {
+            if ($message = $this->schedulableError($participant, $data['fecha'], $time, $endTime)) {
+                return response()->json(['message' => $participant->nombre.': '.$message], 422);
+            }
 
-        if ($conflictingAppointment = $this->findConflictingAppointment($appointment->dentist, $data['fecha'], $time, $endTime, $appointment->id)) {
-            return response()->json(['message' => $this->conflictMessage($conflictingAppointment)], 422);
+            if ($conflictingAppointment = $this->findConflictingAppointment($participant, $data['fecha'], $time, $endTime, $appointment->id)) {
+                return response()->json(['message' => $this->conflictMessage($conflictingAppointment, $participant)], 422);
+            }
+
+            if ($conflictingBlock = $this->findConflictingCalendarBlock($participant, $data['fecha'], $time, $endTime)) {
+                return response()->json(['message' => $this->calendarBlockConflictMessage($conflictingBlock).' Doctor: '.$participant->nombre.'.'], 422);
+            }
         }
 
         if ($conflictingAppointment = $this->findPatientConflictingAppointment($appointment->patient, $data['fecha'], $time, $endTime, $appointment->id)) {
             return response()->json(['message' => $this->patientConflictMessage($conflictingAppointment)], 422);
-        }
-
-        if ($conflictingBlock = $this->findConflictingCalendarBlock($appointment->dentist, $data['fecha'], $time, $endTime)) {
-            return response()->json(['message' => $this->calendarBlockConflictMessage($conflictingBlock)], 422);
         }
 
         $appointment->update([
@@ -601,7 +636,7 @@ class AppointmentController extends Controller
         $discount = (float) $appointment->descuento;
         $finalCost = $completedTreatment
             ? (float) $completedTreatment->costo
-            : max(0, $baseCost + $extraCost - $discount);
+            : max(0, ($baseCost + $extraCost) * (1 - ($discount / 100)));
 
         $backUrl = $this->resolveBackUrl(request(), $appointment);
 
@@ -693,13 +728,20 @@ class AppointmentController extends Controller
             'horario' => $start->format('h:i A').' - '.$end->format('h:i A'),
             'tipo' => $appointment->tipo,
             'estado' => $appointment->estado,
+            'collaborative' => $appointment->collaborators()->exists(),
+            'collaborators' => $appointment->collaborators()->pluck('dentists.nombre')->values()->all(),
         ];
     }
 
     private function authorizeAppointmentAccess(Appointment $appointment): void
     {
         if (session('access_role') === 'doctor') {
-            abort_unless($appointment->dentist_id === $this->currentDoctorDentist()?->id, 403);
+            $dentistId = $this->currentDoctorDentist()?->id;
+            abort_unless(
+                $appointment->dentist_id === $dentistId
+                || $appointment->participatingDentists()->whereKey($dentistId)->exists(),
+                403
+            );
             return;
         }
 
@@ -717,7 +759,12 @@ class AppointmentController extends Controller
     private function authorizeCalendarAppointmentAccess(Appointment $appointment): void
     {
         if (session('access_role') === 'doctor') {
-            abort_unless($appointment->dentist_id === $this->currentDoctorDentist()?->id, 403);
+            $dentistId = $this->currentDoctorDentist()?->id;
+            abort_unless(
+                $appointment->dentist_id === $dentistId
+                || $appointment->participatingDentists()->whereKey($dentistId)->exists(),
+                403
+            );
             return;
         }
 
@@ -731,6 +778,14 @@ class AppointmentController extends Controller
     private function scopeAppointmentsForCurrentUser($query)
     {
         return $query;
+    }
+
+    private function scopeForDentistParticipation($query, int $dentistId)
+    {
+        return $query->where(function ($appointments) use ($dentistId) {
+            $appointments->where('dentist_id', $dentistId)
+                ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentistId));
+        });
     }
 
     private function currentAssistantUserId(): ?int
@@ -845,7 +900,10 @@ class AppointmentController extends Controller
     private function findConflictingAppointment(Dentist $dentist, string $date, string $time, string $endTime, ?int $ignoreAppointmentId = null): ?Appointment
     {
         $appointments = Appointment::query()
-            ->where('dentist_id', $dentist->id)
+            ->where(function ($query) use ($dentist) {
+                $query->where('dentist_id', $dentist->id)
+                    ->orWhereHas('participatingDentists', fn ($participants) => $participants->whereKey($dentist->id));
+            })
             ->whereNotIn('estado', ['Cancelada', 'Terminada'])
             ->when($ignoreAppointmentId, fn ($query) => $query->whereKeyNot($ignoreAppointmentId))
             ->orderBy('time')
@@ -900,13 +958,14 @@ class AppointmentController extends Controller
         });
     }
 
-    private function conflictMessage(Appointment $appointment): string
+    private function conflictMessage(Appointment $appointment, ?Dentist $dentist = null): string
     {
         $start = Carbon::parse($appointment->date->toDateString().' '.$appointment->time);
         $end = $this->appointmentEnd($appointment);
 
         return sprintf(
-            'El dentista ya tiene una cita de %s a %s. Elige una hora de inicio y termino fuera de ese bloque.',
+            '%s ya tiene una cita de %s a %s. Elige una hora de inicio y termino fuera de ese bloque.',
+            $dentist?->nombre ?? 'El dentista',
             $start->format('H:i'),
             $end->format('H:i')
         );
@@ -1105,5 +1164,18 @@ class AppointmentController extends Controller
     private function appointmentDuration(): int
     {
         return ClinicSetting::current()->appointment_duration;
+    }
+
+    private function syncAppointmentParticipants(Appointment $appointment, Dentist $primary, ?Dentist $collaborator): void
+    {
+        $participants = [
+            $primary->id => ['participation_role' => 'primary'],
+        ];
+
+        if ($collaborator) {
+            $participants[$collaborator->id] = ['participation_role' => 'collaborator'];
+        }
+
+        $appointment->participatingDentists()->sync($participants);
     }
 }

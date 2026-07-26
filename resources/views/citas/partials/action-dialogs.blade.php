@@ -21,10 +21,10 @@
 
             <div class="grid gap-4 md:grid-cols-3">
                 <label class="block">
-                    <span class="text-sm font-semibold text-slate-700">Descuento</span>
+                    <span class="text-sm font-semibold text-slate-700">Descuento porcentual</span>
                     <div class="mt-2 flex rounded-2xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-emerald-200">
-                        <span class="px-4 py-3 text-slate-400">$</span>
-                        <input data-finish-discount type="number" name="descuento" min="0" step="0.01" value="{{ $cita['descuento'] ?? 0 }}" class="min-w-0 flex-1 rounded-r-2xl px-2 py-3 outline-none">
+                        <input data-finish-discount type="number" name="descuento" min="0" max="100" step="0.01" value="{{ $cita['descuento'] ?? 0 }}" class="min-w-0 flex-1 rounded-l-2xl px-4 py-3 outline-none">
+                        <span class="px-4 py-3 text-slate-400">%</span>
                     </div>
                 </label>
                 <label class="block">
@@ -48,7 +48,7 @@
 
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                 <span class="text-sm font-semibold text-slate-600">Costo base: ${{ number_format($baseCost, 2) }}</span>
-                <span class="text-lg font-bold text-emerald-700">Total: $<span data-finish-total>{{ number_format(max(0, $baseCost + (float) ($cita['costo_extra'] ?? 0) - (float) ($cita['descuento'] ?? 0)), 2) }}</span></span>
+                <span class="text-lg font-bold text-emerald-700">Total: $<span data-finish-total>{{ number_format(max(0, ($baseCost + (float) ($cita['costo_extra'] ?? 0)) * (1 - ((float) ($cita['descuento'] ?? 0) / 100))), 2) }}</span></span>
             </div>
         </div>
 

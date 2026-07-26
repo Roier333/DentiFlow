@@ -120,7 +120,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
         const updateTotal = () => {
             if (!total) return;
-            total.textContent = money(Math.max(0, base + Number(extra?.value || 0) - Number(discount?.value || 0)));
+            const subtotal = base + Number(extra?.value || 0);
+            const discountPercentage = Math.min(100, Math.max(0, Number(discount?.value || 0)));
+            total.textContent = money(Math.max(0, subtotal * (1 - discountPercentage / 100)));
         };
 
         discount?.addEventListener('input', updateTotal);
