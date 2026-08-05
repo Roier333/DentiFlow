@@ -232,7 +232,7 @@
                 </details>
                 <form method="POST" action="{{ route('logout') }}" class="ml-1">
                     @csrf
-                    <button type="submit" class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-[#9700cf]" aria-label="Cerrar sesion" title="Cerrar sesion">
+                    <button type="submit" class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-[#9700cf]" aria-label="Cerrar sesión" title="Cerrar sesión">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 17l5-5-5-5m5 5H3m11-9h6v18h-6"/></svg>
                     </button>
                 </form>

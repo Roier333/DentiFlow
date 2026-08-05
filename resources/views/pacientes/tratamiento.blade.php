@@ -6,11 +6,11 @@
 <div class="mx-auto max-w-4xl space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Catalogo clinico</p>
+            <p class="text-sm font-semibold text-[#9700cf]">Catálogo clínico</p>
             <h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $edit ? 'Editar tratamiento' : 'Nuevo tratamiento' }}</h1>
             <p class="mt-2 text-sm text-slate-500">Define el servicio y el color con el que se vera en el calendario.</p>
         </div>
-        <a href="{{ route('pacientes.tratamientos') }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600">Volver al catalogo</a>
+        <a href="{{ route('pacientes.tratamientos') }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600">Volver al catálogo</a>
     </div>
 
     <form method="POST" action="{{ $edit ? route('pacientes.tratamientos.update', $tratamiento['id']) : route('pacientes.tratamientos.store') }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_4px_20px_rgba(30,34,60,.04)] sm:p-8">
@@ -46,7 +46,7 @@
             <label class="block text-sm font-semibold text-slate-700 sm:col-span-2">Color en calendario
                 <span class="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3.5">
                     <input type="color" name="color" value="{{ old('color', $tratamiento['color'] ?? '#9700cf') }}" class="h-10 w-14 cursor-pointer rounded-lg border-0 bg-transparent p-0">
-                    <span class="text-sm font-normal text-slate-500">Las citas con este tratamiento usaran este color en dia, semana y mes.</span>
+                    <span class="text-sm font-normal text-slate-500">Las citas con este tratamiento usarán este color en día, semana y mes.</span>
                 </span>
             </label>
 

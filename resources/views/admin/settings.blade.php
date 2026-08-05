@@ -19,9 +19,9 @@
         @csrf
 
         <section>
-            <h2 class="font-bold">Informacion general</h2>
+            <h2 class="font-bold">Información general</h2>
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
-                <label class="text-sm font-semibold text-slate-700">Nombre de la clinica
+                <label class="text-sm font-semibold text-slate-700">Nombre de la clínica
                     <input name="clinic_name" value="{{ old('clinic_name', $settings->clinic_name) }}" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
                 </label>
                 <label class="text-sm font-semibold text-slate-700">Correo de soporte
@@ -31,8 +31,8 @@
         </section>
 
         <section class="mt-8 border-t border-slate-100 pt-6">
-            <h2 class="font-bold">Agenda y operacion</h2>
-            <p class="mt-1 text-xs text-slate-400">Reglas base para la programacion diaria del consultorio.</p>
+            <h2 class="font-bold">Agenda y operación</h2>
+            <p class="mt-1 text-xs text-slate-400">Reglas base para la programación diaria del consultorio.</p>
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
                 <label class="text-sm font-semibold text-slate-700">Hora de apertura
                     <input type="time" name="opening_time" value="{{ old('opening_time', substr($settings->opening_time, 0, 5)) }}" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">

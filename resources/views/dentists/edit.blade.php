@@ -56,7 +56,7 @@
 
             <div class="rounded-3xl border border-[#ead2fb] bg-[#f6e8ff]/50 p-5">
                 <h2 class="text-sm font-bold text-gray-800">{{ $dentista->user ? 'Actualizar contraseña' : 'Crear acceso del doctor' }}</h2>
-                <p class="mt-1 text-xs text-gray-500">{{ $dentista->user ? 'Deja estos campos vacios si no deseas cambiar la contraseña.' : 'Agrega una contraseña para que este doctor pueda iniciar sesion.' }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ $dentista->user ? 'Deja estos campos vacíos si no deseas cambiar la contraseña.' : 'Agrega una contraseña para que este doctor pueda iniciar sesión.' }}</p>
                 <div class="mt-5 grid gap-6 md:grid-cols-2">
                     <label class="block">
                         <span class="text-gray-700">Contraseña</span>

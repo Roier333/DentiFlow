@@ -181,7 +181,7 @@
             <section class="rounded-lg border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-5 py-4">
                     <h2 class="text-lg font-semibold text-slate-900">Ganancias por mes</h2>
-                    <p class="text-sm text-slate-500">Comparativo de los ultimos meses disponibles.</p>
+                    <p class="text-sm text-slate-500">Comparativo de los últimos meses disponibles.</p>
                 </div>
 
                 <div class="space-y-4 p-5">

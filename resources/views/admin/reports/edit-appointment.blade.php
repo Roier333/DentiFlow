@@ -8,7 +8,7 @@
         <div>
             <p class="text-sm font-semibold text-[#9700cf]">Reportes</p>
             <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Editar cita terminada</h1>
-            <p class="mt-2 max-w-2xl text-sm text-slate-500">Corrige la informacion historica de la cita y sincroniza el reporte generado.</p>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">Corrige la información histórica de la cita y sincroniza el reporte generado.</p>
         </div>
         <a href="{{ route('admin.reports') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Volver a reportes</a>
     </section>
@@ -72,7 +72,7 @@
         </div>
 
         <div class="mt-6 rounded-2xl border border-[#ead2fb] bg-[#fbf0ff] p-4 text-sm text-[#512569]">
-            Cita #{{ $appointment->id }} marcada como terminada. Al guardar, el reporte vinculado se actualizara con paciente, tratamiento, fecha y costo del catalogo.
+            Cita #{{ $appointment->id }} marcada como terminada. Al guardar, el reporte vinculado se actualizará con paciente, tratamiento, fecha y costo del catálogo.
         </div>
 
         <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">

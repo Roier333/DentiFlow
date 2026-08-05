@@ -48,7 +48,7 @@
 
             <div class="rounded-3xl border border-[#ead2fb] bg-[#f6e8ff]/50 p-5">
                 <h2 class="text-sm font-bold text-gray-800">Acceso del doctor</h2>
-                <p class="mt-1 text-xs text-gray-500">Estos datos se usaran para iniciar sesion con perfil de doctor.</p>
+                <p class="mt-1 text-xs text-gray-500">Estos datos se usarán para iniciar sesión con perfil de doctor.</p>
                 <div class="mt-5 grid gap-6 md:grid-cols-2">
                     <label class="block">
                         <span class="text-gray-700">Correo de acceso</span>

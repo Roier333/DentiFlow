@@ -16,8 +16,7 @@
             'key' => 'doctor',
             'title' => 'Doctor',
             'label' => 'Área clínica',
-            'description' => 'Agenda, expedientes clinicos, tratamientos y seguimiento de pacientes.',
-            'metric' => 'Practica diaria',
+            'description' => 'Agenda, expedientes clínicos, tratamientos y seguimiento de pacientes.',
             'accent' => '#a800f4',
             'soft' => '#f6e8ff',
             'icon' => 'doctor',
@@ -25,9 +24,8 @@
         [
             'key' => 'asistente',
             'title' => 'Asistente',
-            'label' => 'Recepcion',
-            'description' => 'Citas, calendario, pacientes, inventario y coordinacion operativa.',
-            'metric' => 'Operacion fluida',
+            'label' => 'Recepción',
+            'description' => 'Citas, calendario, pacientes, inventario y coordinación operativa.',
             'accent' => '#a126bb',
             'soft' => '#fbf0ff',
             'icon' => 'calendar',
@@ -57,8 +55,8 @@
             <div class="flex flex-1 flex-col justify-center py-14 lg:py-16">
                 <div class="mx-auto max-w-lg text-left">
                     <p class="text-xs font-bold uppercase tracking-[0.24em] text-[#ead2fb]">Crear cuenta</p>
-                    <h1 class="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Que tipo de cuenta deseas crear?</h1>
-                    <p class="mt-5 max-w-md text-sm leading-7 text-white/62">Elige Doctor o Asistente. Tu cuenta se registrara directamente con ese rol.</p>
+                    <h1 class="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">¿Qué tipo de cuenta deseas crear?</h1>
+                    <p class="mt-5 max-w-md text-sm leading-7 text-white/62">Elige Doctor o Asistente. Tu cuenta se registrará directamente con ese rol.</p>
                 </div>
             </div>
 
@@ -77,14 +75,7 @@
             @endif
             @include('partials.flash-success')
 
-            <div class="flex justify-end">
-                <div class="hidden rounded-2xl border border-[#ead2fb] bg-white px-4 py-3 shadow-sm sm:block">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#ad79d3]">{{ now()->format('d/m/Y') }}</p>
-                    <p class="mt-1 text-sm font-bold text-[#512569]">DentiFlow</p>
-                </div>
-            </div>
-
-            <div class="mt-8 grid gap-4 md:grid-cols-2">
+            <div class="grid gap-4 md:grid-cols-2">
                 @foreach($roles as $role)
                     <a href="{{ route('register', ['role' => $role['key']]) }}" class="group relative overflow-hidden rounded-[1.35rem] border border-[#ead2fb] bg-white p-5 shadow-[0_18px_60px_rgba(81,37,105,.08)] transition duration-300 hover:-translate-y-1 hover:border-[#b27acc] hover:shadow-[0_24px_80px_rgba(81,37,105,.16)]">
                         <div class="absolute inset-x-0 top-0 h-1.5" style="background: linear-gradient(90deg, {{ $role['accent'] }}, #d3a2f2);"></div>
@@ -111,8 +102,7 @@
                             <p class="mt-3 min-h-[72px] text-sm leading-6 text-[#6b5778]">{{ $role['description'] }}</p>
                         </div>
 
-                        <div class="mt-5 flex items-center justify-between border-t border-[#ead2fb] pt-4">
-                            <span class="text-xs font-bold text-[#512569]">{{ $role['metric'] }}</span>
+                        <div class="mt-5 flex items-center justify-end border-t border-[#ead2fb] pt-4">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#ad79d3]">Crear cuenta</span>
                         </div>
                     </a>

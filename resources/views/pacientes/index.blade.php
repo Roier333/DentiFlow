@@ -35,7 +35,7 @@
                     type="text"
                     name="search"
                     value="{{ request('search') }}"
-                    placeholder="Nombre, telefono o correo"
+                    placeholder="Nombre, teléfono o correo"
                     class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
             </label>
 
