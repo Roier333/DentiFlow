@@ -11,9 +11,7 @@
 </head>
 @php
     $accountType = [
-        'title' => 'Cuenta de '.($selectedRole === 'doctor' ? 'Doctor' : 'Asistente'),
         'eyebrow' => 'Registro',
-        'description' => 'Solicita tu acceso como '.($selectedRole === 'doctor' ? 'Doctor' : 'Asistente').'. Administración revisará tu cuenta antes de activarla.',
     ];
 @endphp
 <body class="min-h-screen bg-[#fbf0ff] font-['DM_Sans'] text-[#21152e] antialiased">
@@ -39,7 +37,6 @@
             <div class="max-w-xl py-14 lg:py-16">
                 <p class="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-[#ead2fb]">{{ $accountType['eyebrow'] }}</p>
                 <h1 class="mt-6 max-w-lg text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Registra tu acceso profesional.</h1>
-                <p class="mt-5 max-w-md text-sm leading-7 text-white/62">Registra tus datos. Al terminar, te llevaremos a una sala de espera mientras Administración valida tu acceso.</p>
             </div>
 
         </div>
@@ -55,8 +52,7 @@
             <div class="mt-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.24em] text-[#9700cf]">Registro</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-[#21152e] sm:text-4xl">Crear cuenta de {{ $selectedRole === 'doctor' ? 'Doctor' : 'Asistente' }}</h2>
-                    <p class="mt-3 max-w-xl text-sm leading-6 text-[#6b5778]">{{ $accountType['description'] }}</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-[#21152e] sm:text-4xl">Crear cuenta de {{ $selectedRole === 'doctor' ? 'doctor' : 'asistente' }}</h2>
                 </div>
             </div>
 
@@ -111,7 +107,12 @@
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
-                                <input id="password" type="password" name="password" placeholder="********" autocomplete="new-password" required data-password-strength-input class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                                <div class="relative">
+                                    <input id="password" type="password" name="password" placeholder="********" autocomplete="new-password" required data-password-strength-input class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-12 text-sm outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                                    <button type="button" data-password-toggle aria-controls="password" aria-label="Mostrar contraseña" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-[#9700cf]">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.75"/></svg>
+                                    </button>
+                                </div>
                                 <div class="mt-3" data-password-strength>
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <p class="text-xs font-bold uppercase tracking-wider text-[#ad79d3]">Seguridad</p>
@@ -122,16 +123,22 @@
                                     </div>
                                     <ul class="mt-3 grid gap-1.5 text-xs font-semibold text-slate-500" data-password-strength-rules>
                                         <li data-rule="length">Mínimo 8 caracteres</li>
-                                        <li data-rule="case">Mayúsculas y minúsculas</li>
-                                        <li data-rule="number">Al menos un número</li>
-                                        <li data-rule="symbol">Al menos un símbolo</li>
+                                        <li data-rule="case" class="hidden">Mayúsculas y minúsculas</li>
+                                        <li data-rule="number" class="hidden">Al menos un número</li>
+                                        <li data-rule="symbol" class="hidden">Al menos un símbolo</li>
                                     </ul>
+                                    <p class="mt-3 hidden text-xs font-semibold text-emerald-600" data-password-requirements-complete>Todos los requisitos se han cumplido.</p>
                                 </div>
                             </div>
 
                             <div>
                                 <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
-                                <input id="password_confirmation" type="password" name="password_confirmation" placeholder="********" autocomplete="new-password" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                                <div class="relative">
+                                    <input id="password_confirmation" type="password" name="password_confirmation" placeholder="********" autocomplete="new-password" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 pr-12 text-sm outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                                    <button type="button" data-password-toggle aria-controls="password_confirmation" aria-label="Mostrar contraseña" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-[#9700cf]">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.75"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -146,5 +153,42 @@
         </div>
     </section>
 </main>
+<script>
+    document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.getAttribute('aria-controls'));
+            if (!input) return;
+
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            button.setAttribute('aria-label', isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        });
+    });
+
+    const registrationPassword = document.querySelector('[data-password-strength-input]');
+    const passwordRequirements = [...document.querySelectorAll('[data-password-strength-rules] [data-rule]')];
+    const passwordRequirementsComplete = document.querySelector('[data-password-requirements-complete]');
+
+    const updateVisiblePasswordRequirement = () => {
+        if (!registrationPassword || !passwordRequirements.length) return;
+
+        const value = registrationPassword.value;
+        const rules = {
+            length: value.length >= 8,
+            case: /[a-z]/.test(value) && /[A-Z]/.test(value),
+            number: /\d/.test(value),
+            symbol: /[^A-Za-z0-9]/.test(value),
+        };
+        const nextRule = passwordRequirements.find((requirement) => !rules[requirement.dataset.rule]);
+
+        passwordRequirements.forEach((requirement) => {
+            requirement.classList.toggle('hidden', requirement !== nextRule);
+        });
+        passwordRequirementsComplete?.classList.toggle('hidden', Boolean(nextRule));
+    };
+
+    registrationPassword?.addEventListener('input', updateVisiblePasswordRequirement);
+    updateVisiblePasswordRequirement();
+</script>
 </body>
 </html>
