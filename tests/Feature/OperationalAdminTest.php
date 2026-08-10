@@ -50,13 +50,16 @@ class OperationalAdminTest extends TestCase
 
         $this->withSession($session)
             ->get(route('inicio'))
-            ->assertSee('Administración clínica')
+            ->assertSee('Resumen')
+            ->assertSee('Vista general de las actividades y operaciones diarias del consultorio.')
             ->assertSee('Nuevo tratamiento')
             ->assertSee('Alertas de inventario');
 
         $this->withSession($session)
             ->get(route('admin.users'))
-            ->assertRedirect(route('login'));
+            ->assertOk()
+            ->assertSee('Usuarios del sistema')
+            ->assertSee('Solicitudes pendientes');
 
         $this->withSession($session)->post(route('pacientes.clinical.store', $patient), [
             'dentist_id' => $dentist->id,
@@ -89,10 +92,46 @@ class OperationalAdminTest extends TestCase
 
         $this->withSession($session)
             ->get(route('admin.users'))
-            ->assertOk();
+            ->assertRedirect(route('inicio'));
 
         $this->withSession($session)
             ->get(route('inventario'))
             ->assertRedirect(route('inicio'));
+    }
+
+    public function test_operational_admin_can_mark_an_assistant_as_unavailable(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $assistant = User::factory()->create(['name' => 'Asistente Agenda', 'role' => 'asistente']);
+        $session = [
+            'access_role' => 'admin',
+            'access_user_id' => $admin->id,
+            'access_name' => $admin->name,
+            'access_email' => $admin->email,
+        ];
+
+        $this->withSession($session)
+            ->get(route('calendario'))
+            ->assertOk()
+            ->assertSee('Doctor o asistente')
+            ->assertSee('Asistente Agenda')
+            ->assertDontSee('Disponibilidad')
+            ->assertDontSee('Ese día quedará cerrado para nuevas citas.');
+
+        $this->withSession($session)
+            ->post(route('calendario.bloqueos.store'), [
+                'target' => 'assistant:'.$assistant->id,
+                'date' => now()->addDay()->toDateString(),
+                'type' => 'No disponible',
+                'notes' => 'Ausencia administrativa',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('calendar_blocks', [
+            'dentist_id' => null,
+            'target_user_id' => $assistant->id,
+            'type' => 'No disponible',
+        ]);
     }
 }

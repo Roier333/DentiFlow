@@ -40,9 +40,9 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-lg overflow-hidden">
+    <div class="overflow-x-auto rounded-3xl bg-white shadow-lg">
 
-        <table class="w-full">
+        <table class="w-full min-w-[900px]">
 
             <thead class="bg-[#9700cf] text-white">
                 <tr>
@@ -119,6 +119,3 @@
 </div>
 
 @endsection
-
-
-

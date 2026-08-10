@@ -127,15 +127,16 @@ class DashboardController extends Controller
                 return $this->serializeAppointment($appointment);
             });
 
-        $tratamientos = $this->scopeTreatmentsForRole(Treatment::with('patient'), $isDoctor, $doctorDentist)
+        $tratamientos = $this->scopeTreatmentsForRole(Treatment::query(), $isDoctor, $doctorDentist)
             ->orderByDesc('fecha')
-            ->limit(4)
+            ->orderByDesc('id')
+            ->limit(3)
             ->get()
             ->map(function (Treatment $treatment) {
                 return [
-                    'paciente' => $treatment->patient?->nombre ?? $treatment->paciente,
                     'tratamiento' => $treatment->tratamiento,
                     'tipo' => $treatment->tipo,
+                    'fecha' => $treatment->fecha?->format('d/m/Y'),
                     'estado' => $treatment->estado,
                 ];
             });
@@ -314,6 +315,7 @@ class DashboardController extends Controller
         }
 
         $isDoctor = $request->session()->get('access_role') === 'doctor';
+        $isOperationalAdmin = $request->session()->get('access_role') === 'admin';
         $isAssistant = in_array($request->session()->get('access_role'), ['asistente', 'admin'], true);
         $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
         $agendaMode = $isDoctor && $request->query('agenda') === 'equipo' ? 'equipo' : 'mio';
@@ -381,7 +383,8 @@ class DashboardController extends Controller
             return $date >= $weekStart->toDateString() && $date <= $weekEnd->toDateString();
         })->values();
 
-        $blocks = CalendarBlock::with('dentist')
+        $blocks = CalendarBlock::with(['dentist', 'targetUser'])
+            ->when(! $isOperationalAdmin, fn ($query) => $query->whereNull('target_user_id'))
             ->when($isDoctor && $agendaMode === 'mio', fn ($query) => $query->where('dentist_id', $doctorDentist?->id ?? 0))
             ->when($isAssistant && $selectedDentist !== 'Todos' && $selectedDentist !== '', fn ($query) => $query->where('dentist_id', $selectedDentist))
             ->whereBetween('date', [
@@ -446,11 +449,15 @@ class DashboardController extends Controller
             'calendarBlocks' => $blocks,
             'dayBlocks' => $dayBlocks,
             'dentists' => Dentist::orderBy('nombre')->get(['id', 'nombre']),
+            'assistants' => $isOperationalAdmin
+                ? User::where('role', 'asistente')->orderBy('name')->get(['id', 'name'])
+                : collect(),
             'treatments' => Treatment::whereNull('appointment_id')->whereNull('patient_id')->orderBy('tratamiento')->pluck('tratamiento')->unique()->values(),
             'selectedDentist' => $selectedDentist,
             'selectedTreatment' => $selectedTreatment,
             'isDoctor' => $isDoctor,
             'isAssistant' => $isAssistant,
+            'isOperationalAdmin' => $isOperationalAdmin,
             'doctorDentist' => $doctorDentist,
             'agendaMode' => $agendaMode,
         ]));
@@ -458,28 +465,49 @@ class DashboardController extends Controller
 
     public function storeCalendarBlock(Request $request)
     {
-        $isDoctor = $request->session()->get('access_role') === 'doctor';
+        $role = $request->session()->get('access_role');
+        $isDoctor = $role === 'doctor';
+        $isOperationalAdmin = $role === 'admin';
         $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
 
         $data = $request->validate([
-            'dentist_id' => $isDoctor ? 'nullable' : 'required|exists:dentists,id',
+            'target' => $isOperationalAdmin ? ['required', 'string', 'regex:/^(dentist|assistant):[0-9]+$/'] : ['nullable'],
+            'dentist_id' => ($isDoctor || $isOperationalAdmin) ? 'nullable' : 'required|exists:dentists,id',
             'date' => 'required|date|after_or_equal:today',
             'type' => 'required|string|max:60',
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $dentistId = $isDoctor ? $doctorDentist?->id : (int) $data['dentist_id'];
-        abort_unless($dentistId, 403);
+        $dentistId = $isDoctor ? $doctorDentist?->id : ($isOperationalAdmin ? null : (int) $data['dentist_id']);
+        $targetUserId = null;
+
+        if ($isOperationalAdmin) {
+            [$targetType, $targetId] = explode(':', $data['target'], 2);
+
+            if ($targetType === 'dentist') {
+                $dentistId = Dentist::whereKey($targetId)->value('id');
+                abort_unless($dentistId, 422);
+            } else {
+                $targetUserId = User::whereKey($targetId)->where('role', 'asistente')->value('id');
+                abort_unless($targetUserId, 422);
+            }
+        }
+
+        abort_unless($dentistId || $targetUserId, 403);
         $startTime = '00:00';
         $endTime = '23:59';
 
-        if ($conflictingAppointment = $this->findAppointmentOverlappingBlock($dentistId, $data['date'], $startTime, $endTime)) {
+        if ($dentistId && ($conflictingAppointment = $this->findAppointmentOverlappingBlock($dentistId, $data['date'], $startTime, $endTime))) {
             return back()
                 ->withErrors(['date' => "Ese día ya tiene la cita #{$conflictingAppointment->id}. Cancela o reprograma las citas antes de marcarlo como no disponible."])
                 ->withInput();
         }
 
-        if ($conflictingBlock = $this->findCalendarBlockOverlap($dentistId, $data['date'], $startTime, $endTime)) {
+        $conflictingBlock = $dentistId
+            ? $this->findCalendarBlockOverlap($dentistId, $data['date'], $startTime, $endTime)
+            : CalendarBlock::where('target_user_id', $targetUserId)->whereDate('date', $data['date'])->first();
+
+        if ($conflictingBlock) {
             return back()
                 ->withErrors(['date' => "Ese día ya está marcado como {$conflictingBlock->type}."])
                 ->withInput();
@@ -487,6 +515,7 @@ class DashboardController extends Controller
 
         CalendarBlock::create([
             'dentist_id' => $dentistId,
+            'target_user_id' => $targetUserId,
             'created_by_user_id' => $request->session()->get('access_user_id'),
             'date' => $data['date'],
             'start_time' => $startTime,

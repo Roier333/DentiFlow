@@ -113,7 +113,13 @@ class PatientController extends Controller
 
         $data = $this->normalizePatientData($data);
 
-        Patient::create($data);
+        $patient = Patient::create($data);
+
+        if ($request->input('origen') === 'expedientes') {
+            return redirect()
+                ->route('pacientes.expediente', ['paciente' => $patient, 'tab' => 'resumen'])
+                ->with('success', 'Expediente creado correctamente.');
+        }
 
         return redirect()->route('pacientes')->with('success', 'Paciente agregado correctamente.');
     }

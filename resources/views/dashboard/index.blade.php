@@ -57,9 +57,8 @@
 
     <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Vista general</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $isDoctor ? 'Resumen clínico' : ($isOperationalAdmin ? 'Administración clínica' : 'Resumen de recepción') }}</h1>
-            <p class="mt-1 text-sm text-slate-500">{{ $isDoctor ? 'Consulta tu agenda, pacientes y actividad del día.' : ($isOperationalAdmin ? 'Coordina agenda, atención clínica, pacientes e inventario desde un solo lugar.' : 'Revisa citas, pacientes y tareas del consultorio.') }}</p>
+            <h1 class="text-3xl font-bold tracking-tight">{{ $isDoctor ? 'Resumen clínico' : ($isOperationalAdmin ? 'Resumen' : 'Resumen de recepción') }}</h1>
+            <p class="mt-1 text-sm text-slate-500">{{ $isDoctor ? 'Consulta tu agenda, pacientes y actividad del día.' : ($isOperationalAdmin ? 'Vista general de las actividades y operaciones diarias del consultorio.' : 'Revisa citas, pacientes y tareas del consultorio.') }}</p>
         </div>
         <a href="{{ route('citas.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#9700cf] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2]"><span class="text-lg leading-none">+</span>Nueva cita</a>
     </section>
@@ -243,63 +242,31 @@
         </article>
     </section>
 
-    <section class="grid gap-5 {{ $isDoctor ? '' : 'xl:grid-cols-[1.45fr_1fr]' }}">
-        <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-                <div><h2 class="font-bold text-slate-900">Agenda de hoy</h2><p class="mt-0.5 text-xs text-slate-400">{{ $agendaHoy->count() }} citas programadas</p></div>
-                <a href="{{ route('citas') }}" class="text-xs font-semibold text-[#9700cf]">Ver todas →</a>
-            </div>
-            <div class="divide-y divide-slate-100">
-                @forelse($agendaHoy->take(5) as $cita)
-                    <div class="flex items-center gap-3 px-5 py-4 sm:px-6">
-                        <div class="w-12 shrink-0 text-center"><p class="text-sm font-bold text-slate-800">{{ date('H:i', strtotime($cita['hora'])) }}</p><p class="text-[9px] uppercase text-slate-400">hora</p></div>
-                        <div class="h-9 w-px bg-slate-100"></div>
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ead2fb] text-xs font-bold text-[#9700cf]">{{ mb_strtoupper(mb_substr($cita['paciente'], 0, 1)) }}</div>
-                        <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-slate-800">{{ $cita['paciente'] }}</p><p class="truncate text-[11px] text-slate-400">{{ $cita['tipo'] }} · {{ $cita['dentista'] }}</p></div>
-                        <span class="hidden rounded-full px-2.5 py-1 text-[10px] font-bold sm:inline-flex {{ $statusStyles[$cita['estado']] ?? 'bg-slate-50 text-slate-600' }}">{{ $cita['estado'] }}</span>
-                        <a href="{{ route('citas.show', $cita['id']) }}" class="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-[#9700cf]">•••</a>
-                    </div>
-                @empty
-                    <div class="px-6 py-12 text-center"><p class="text-sm font-medium text-slate-500">No hay citas programadas para hoy</p><a href="{{ route('citas.create') }}" class="mt-2 inline-block text-xs font-semibold text-[#9700cf]">Agendar una cita</a></div>
-                @endforelse
-            </div>
-        </article>
-
-        <div class="space-y-5">
-            @if(!$isDoctor)
-                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(30,34,60,.04)]">
-                    <div class="flex items-center justify-between"><div><h2 class="font-bold text-slate-900">Alertas de inventario</h2><p class="mt-0.5 text-xs text-slate-400">Productos por reponer</p></div><a href="{{ route('inventario') }}" class="text-xs font-semibold text-[#9700cf]">Ver todo</a></div>
-                    <div class="mt-4 space-y-3">
-                        @forelse($inventoryAlerts as $item)
-                            <div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fuchsia-50 text-xs font-bold text-fuchsia-500">!</span><div class="min-w-0 flex-1"><p class="truncate text-xs font-semibold text-slate-700">{{ $item->material }}</p><p class="text-[10px] text-slate-400">Mínimo: {{ $item->reposicion }}</p></div><span class="rounded-full bg-fuchsia-50 px-2 py-1 text-[10px] font-bold text-fuchsia-600">{{ $item->stock }} uds.</span></div>
-                        @empty<div class="rounded-xl bg-[#f6e8ff] p-3 text-xs font-medium text-[#8200b8]">Inventario con existencias suficientes.</div>@endforelse
-                    </div>
-                </article>
-            @endif
-        </div>
-    </section>
-
-    <section class="grid gap-5 {{ $isDoctor ? 'lg:grid-cols-2' : '' }}">
-        <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-900">Próximas citas</h2><p class="text-xs text-slate-400">Seguimiento de agenda</p></div><a href="{{ route('citas') }}" class="text-xs font-semibold text-[#9700cf]">Ver agenda</a></div>
-            <div class="divide-y divide-slate-100">
-                @forelse($proximasCitas as $cita)
-                    <div class="flex items-center gap-3 px-5 py-3.5"><div class="w-11 rounded-lg bg-slate-50 py-1.5 text-center"><strong class="block text-sm text-slate-700">{{ date('d', strtotime($cita['fecha'])) }}</strong><span class="text-[8px] uppercase text-slate-400">{{ date('M', strtotime($cita['fecha'])) }}</span></div><div class="min-w-0 flex-1"><p class="truncate text-xs font-semibold text-slate-700">{{ $cita['paciente'] }}</p><p class="truncate text-[10px] text-slate-400">{{ date('H:i', strtotime($cita['hora'])) }} · {{ $cita['tipo'] }}</p></div><span class="rounded-full px-2 py-1 text-[9px] font-bold {{ $statusStyles[$cita['estado']] ?? 'bg-slate-50 text-slate-600' }}">{{ $cita['estado'] }}</span></div>
-                @empty<div class="p-8 text-center text-xs text-slate-400">No hay próximas citas.</div>@endforelse
-            </div>
-        </article>
-
-        @if($isDoctor || $isOperationalAdmin)
-            <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
-                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-900">Tratamientos recientes</h2><p class="text-xs text-slate-400">Actividad clínica</p></div><a href="{{ route('pacientes.tratamientos') }}" class="text-xs font-semibold text-[#9700cf]">Ver todos</a></div>
-                <div class="divide-y divide-slate-100">
-                    @forelse($tratamientos as $tratamiento)
-                        <div class="flex items-center gap-3 px-5 py-3.5"><span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ead2fb] text-[#9700cf]">✦</span><div class="min-w-0 flex-1"><p class="truncate text-xs font-semibold text-slate-700">{{ $tratamiento['tratamiento'] }}</p><p class="truncate text-[10px] text-slate-400">{{ $tratamiento['paciente'] }} · {{ $tratamiento['tipo'] }}</p></div><span class="rounded-full px-2 py-1 text-[9px] font-bold {{ $statusStyles[$tratamiento['estado']] ?? 'bg-violet-50 text-violet-700' }}">{{ $tratamiento['estado'] }}</span></div>
-                    @empty<div class="p-8 text-center text-xs text-slate-400">No hay tratamientos recientes.</div>@endforelse
+    @if(!$isDoctor)
+        <section>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_4px_20px_rgba(30,34,60,.04)]">
+                <div class="flex items-center justify-between"><div><h2 class="font-bold text-slate-900">Alertas de inventario</h2><p class="mt-0.5 text-xs text-slate-400">Productos por reponer</p></div><a href="{{ route('inventario') }}" class="text-xs font-semibold text-[#9700cf]">Ver todo</a></div>
+                <div class="mt-4 space-y-3">
+                    @forelse($inventoryAlerts as $item)
+                        <div class="flex items-center gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-fuchsia-50 text-xs font-bold text-fuchsia-500">!</span><div class="min-w-0 flex-1"><p class="truncate text-xs font-semibold text-slate-700">{{ $item->material }}</p><p class="text-[10px] text-slate-400">Mínimo: {{ $item->reposicion }}</p></div><span class="rounded-full bg-fuchsia-50 px-2 py-1 text-[10px] font-bold text-fuchsia-600">{{ $item->stock }} uds.</span></div>
+                    @empty<div class="rounded-xl bg-[#f6e8ff] p-3 text-xs font-medium text-[#8200b8]">Inventario con existencias suficientes.</div>@endforelse
                 </div>
             </article>
-        @endif
-    </section>
+        </section>
+    @endif
+
+    @if($isDoctor || $isOperationalAdmin)
+        <section>
+            <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
+                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">Últimos tratamientos</h2><p class="mt-0.5 text-xs text-slate-400">Resumen de los tratamientos registrados</p></div>
+                <div class="divide-y divide-slate-100">
+                    @forelse($tratamientos as $tratamiento)
+                        <div class="flex items-center gap-3 px-5 py-3.5"><span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ead2fb] text-[#9700cf]">✦</span><div class="min-w-0 flex-1"><p class="truncate text-xs font-semibold text-slate-700">{{ $tratamiento['tratamiento'] }}</p><p class="truncate text-[10px] text-slate-400">{{ $tratamiento['tipo'] }} · {{ $tratamiento['fecha'] }}</p></div><span class="rounded-full px-2 py-1 text-[9px] font-bold {{ $statusStyles[$tratamiento['estado']] ?? 'bg-violet-50 text-violet-700' }}">{{ $tratamiento['estado'] }}</span></div>
+                    @empty<div class="p-8 text-center text-xs text-slate-400">No hay tratamientos registrados.</div>@endforelse
+                </div>
+            </article>
+        </section>
+    @endif
 </div>
 @endsection
 

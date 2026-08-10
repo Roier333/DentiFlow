@@ -14,11 +14,7 @@
     <section class="overflow-hidden rounded-3xl p-6 text-white shadow-[0_22px_70px_rgba(33,21,46,.28)] ring-1 ring-[#512569] sm:p-8" style="background: linear-gradient(135deg, #21152e 0%, #512569 100%);">
         <div>
             <div>
-                <div class="flex items-center gap-3">
-                    <span class="h-2.5 w-2.5 rounded-full {{ $healthy ? 'bg-emerald-400' : 'bg-amber-400' }}"></span>
-                    <p class="text-xs font-bold uppercase tracking-[.2em] text-white/70">Centro de superadministración</p>
-                </div>
-                <h1 class="mt-4 text-3xl font-bold sm:text-4xl">Control del sistema</h1>
+                <h1 class="text-3xl font-bold sm:text-4xl">Control del sistema</h1>
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">Gestiona cuentas, seguridad, configuración y servicios técnicos. Este perfil conserva las funciones del administrador técnico anterior.</p>
             </div>
         </div>
@@ -27,9 +23,8 @@
     <section class="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_6px_24px_rgba(30,34,60,.06)]">
             <div><h2 class="font-bold text-slate-950">Acciones administrativas</h2><p class="mt-1 text-xs text-slate-500">Herramientas frecuentes para gestionar el sistema.</p></div>
-            <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 @foreach([
-                    [route('admin.users'), 'Usuarios', 'Roles y accesos'],
                     [route('admin.system'), 'Sistema', 'Diagnóstico y respaldo'],
                     [route('admin.preferences'), 'Preferencias', 'Preferencias globales'],
                 ] as [$url, $title, $detail])
@@ -108,7 +103,7 @@
 
     <section class="grid gap-5 xl:grid-cols-2">
         <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-900">Cuentas recientes</h2><p class="mt-1 text-xs text-slate-400">Últimas cuentas actualizadas</p></div><a href="{{ route('admin.users') }}" class="text-xs font-bold text-[#9700cf]">Ver usuarios</a></div>
+            <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">Cuentas recientes</h2><p class="mt-1 text-xs text-slate-400">Últimas cuentas actualizadas</p></div>
             <div class="divide-y divide-slate-100">
                 @forelse($recentUsers as $user)
                     <div class="flex items-center gap-3 px-5 py-3.5">

@@ -111,7 +111,7 @@
     </section>
 </main>
 @if(session('logout_success'))
-    <div id="logout-toast" role="status" aria-live="polite" class="fixed right-5 top-5 z-50 flex max-w-sm items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800 shadow-xl transition duration-500">
+    <div id="logout-toast" role="status" aria-live="polite" class="fixed right-3 top-3 z-50 flex w-[calc(100%-1.5rem)] max-w-sm items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800 shadow-xl transition duration-500 sm:right-5 sm:top-5 sm:w-auto">
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
         </span>

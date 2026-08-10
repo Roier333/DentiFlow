@@ -12,15 +12,12 @@
 <div class="space-y-6 pt-6">
     <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#9700cf]/70">Archivo clínico</p>
-            <h1 class="mt-2 text-4xl font-bold text-slate-900">Expedientes</h1>
-            <p class="mt-2 max-w-2xl text-slate-500">
-                Consulta datos clínicos, antecedentes y citas del paciente.
-            </p>
+            <h1 class="text-4xl font-bold text-slate-900">Expedientes</h1>
+            <p class="mt-2 max-w-2xl text-slate-500">Consulta datos clínicos, antecedentes y citas del paciente.</p>
         </div>
 
-        <a href="{{ route('pacientes.create') }}" class="inline-flex items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">
-            Nuevo paciente
+        <a href="{{ route('pacientes.create', ['origen' => 'expedientes']) }}" class="inline-flex items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">
+            Nuevo expediente
         </a>
     </header>
 

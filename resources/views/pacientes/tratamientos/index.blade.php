@@ -6,8 +6,7 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Catálogo clínico</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight">Tratamientos</h1>
+            <h1 class="text-3xl font-bold tracking-tight">Tratamientos</h1>
             <p class="mt-2 text-sm text-slate-500">Gestiona tratamientos y su color en el calendario.</p>
         </div>
         <a href="{{ route('pacientes.tratamiento') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#9700cf] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2]"><span class="text-lg">+</span>Nuevo tratamiento</a>

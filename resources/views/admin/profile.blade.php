@@ -7,8 +7,7 @@
 <div class="mx-auto max-w-5xl space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Cuenta del sistema</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight">Perfil administrativo</h1>
+            <h1 class="text-3xl font-bold tracking-tight">Perfil administrativo</h1>
             <p class="mt-2 text-sm text-slate-500">Información de acceso y seguridad de tu cuenta técnica.</p>
         </div>
         <a href="{{ route('perfil.edit') }}" class="inline-flex justify-center rounded-xl bg-[#9700cf] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2]">Editar perfil</a>

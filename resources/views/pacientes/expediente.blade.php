@@ -25,7 +25,6 @@
                 {{ mb_strtoupper(mb_substr($patient->nombre, 0, 1)) }}
             </span>
             <div>
-                <p class="text-sm font-semibold text-[#9700cf]">Expediente #{{ str_pad($patient->id, 5, '0', STR_PAD_LEFT) }}</p>
                 <h1 class="text-3xl font-bold tracking-tight text-slate-900">{{ $patient->nombre }}</h1>
                 <p class="mt-1 text-sm text-slate-500">{{ $patient->email ?: 'Sin correo' }} @if($patient->telefono) · <a href="tel:{{ preg_replace('/\D+/', '', $patient->telefono) }}" class="font-semibold text-[#9700cf] hover:text-[#512569]">{{ $patient->telefono }}</a>@else · Sin teléfono @endif</p>
             </div>

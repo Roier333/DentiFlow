@@ -9,6 +9,7 @@ class CalendarBlock extends Model
 {
     protected $fillable = [
         'dentist_id',
+        'target_user_id',
         'created_by_user_id',
         'date',
         'start_time',
@@ -29,5 +30,10 @@ class CalendarBlock extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function targetUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'target_user_id');
     }
 }

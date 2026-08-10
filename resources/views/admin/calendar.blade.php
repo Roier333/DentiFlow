@@ -6,11 +6,9 @@
 <div class="space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Administracion</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Calendario del consultorio</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Calendario del consultorio</h1>
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Consulta la agenda mensual por doctor sin mezclarla con los indicadores generales del dashboard.</p>
         </div>
-        <a href="{{ route('inicio') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Volver al dashboard</a>
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_24px_rgba(30,34,60,.05)]">

@@ -13,6 +13,7 @@ class AdminUserController extends Controller
         $search = trim($request->query('search', ''));
 
         $users = User::with('dentist')
+            ->whereIn('role', ['pendiente', 'doctor', 'asistente'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($subQuery) use ($search) {
                     $subQuery->where('name', 'like', "%{$search}%")
@@ -44,6 +45,7 @@ class AdminUserController extends Controller
 
     public function edit(User $user)
     {
+        $this->ensureOperationalUser($user);
         $user->load('dentist');
 
         return view('admin.users.edit', compact('user'));
@@ -51,15 +53,13 @@ class AdminUserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $this->ensureOperationalUser($user);
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', Rule::in(['pendiente', 'doctor', 'asistente', 'admin', 'superadmin'])],
+            'role' => ['required', Rule::in(['pendiente', 'doctor', 'asistente'])],
         ]);
-
-        if ($user->role === 'superadmin' && $data['role'] !== 'superadmin' && User::where('role', 'superadmin')->count() <= 1) {
-            return back()->withErrors(['role' => 'Debe existir al menos un superadministrador activo.'])->withInput();
-        }
 
         $user->update([
             ...$data,
@@ -86,6 +86,8 @@ class AdminUserController extends Controller
 
     public function approve(User $user)
     {
+        $this->ensureOperationalUser($user);
+
         if ($user->role !== 'pendiente') {
             return redirect()
                 ->route('admin.users')
@@ -124,6 +126,8 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, User $user)
     {
+        $this->ensureOperationalUser($user);
+
         if ((int) $request->session()->get('access_user_id') === $user->id) {
             return redirect()
                 ->route('admin.users')
@@ -133,5 +137,10 @@ class AdminUserController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users')->with('success', 'Usuario eliminado correctamente. Ya no podra acceder al sistema.');
+    }
+
+    private function ensureOperationalUser(User $user): void
+    {
+        abort_unless(in_array($user->role, ['pendiente', 'doctor', 'asistente'], true), 403);
     }
 }

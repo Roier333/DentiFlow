@@ -8,11 +8,9 @@
 
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Administrador</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Configuracion de reportes</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Configuracion de reportes</h1>
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Revisa ganancias generadas, corrige citas terminadas o elimina reportes registrados por error.</p>
         </div>
-        <a href="{{ route('inicio') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Volver al panel</a>
     </section>
 
     <section class="grid gap-4 md:grid-cols-3">
@@ -106,4 +104,3 @@
     </section>
 </div>
 @endsection
-

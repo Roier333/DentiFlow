@@ -252,6 +252,7 @@ Route::get('/citas/{id}/detalle', [AppointmentController::class, 'show'])->name(
 Route::get('/reportes', [\App\Http\Controllers\ReportController::class, 'index'])->name('reportes');
 
 Route::get('/reportes/export', [\App\Http\Controllers\ReportController::class, 'export'])->name('reportes.export');
+Route::get('/reportes/export/excel', [\App\Http\Controllers\ReportController::class, 'exportExcel'])->name('reportes.export.excel');
 
 Route::get('/perfil', [\App\Http\Controllers\ProfileController::class, 'show'])->name('perfil');
 Route::get('/perfil/editar', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('perfil.edit');

@@ -14,6 +14,7 @@ use App\Services\AppointmentCompletionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,7 @@ class AppointmentController extends Controller
 {
     private const VALID_STATUSES = ['Pendiente', 'Confirmada', 'Cancelada', 'Asistida', 'Terminada'];
     private const CUSTOM_TREATMENT_OPTION = '__custom_treatment__';
+    private const QUICK_PATIENT_OPTION = '__quick_patient__';
 
     public function index(Request $request)
     {
@@ -234,7 +236,17 @@ class AppointmentController extends Controller
         $currentDentist = $this->currentDoctorDentist();
 
         $data = $request->validate([
-            'paciente' => 'required|string|exists:patients,nombre',
+            'paciente' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value !== self::QUICK_PATIENT_OPTION && ! Patient::where('nombre', $value)->exists()) {
+                        $fail('El paciente seleccionado no existe.');
+                    }
+                },
+            ],
+            'nuevo_paciente_nombre' => 'required_if:paciente,'.self::QUICK_PATIENT_OPTION.'|nullable|string|max:255|regex:/^[\pL\s]+$/u',
+            'nuevo_paciente_telefono' => 'required_if:paciente,'.self::QUICK_PATIENT_OPTION.'|nullable|digits:10',
             'dentista' => $currentDentist ? 'nullable' : 'required|string|exists:dentists,nombre',
             'fecha' => 'required|date|after_or_equal:today',
             'hora' => 'required|date_format:H:i',
@@ -246,7 +258,13 @@ class AppointmentController extends Controller
         ], $this->appointmentValidationMessages(), $this->appointmentValidationAttributes());
 
         $treatmentName = $this->resolveAppointmentTreatmentName($data['tipo'], $data['tratamiento_emergencia'] ?? null, $data['costo_emergencia'] ?? null);
-        $patient = $this->resolvePatient($data['paciente']);
+        $isQuickPatient = $data['paciente'] === self::QUICK_PATIENT_OPTION;
+        if ($isQuickPatient && Patient::where('nombre', trim($data['nuevo_paciente_nombre']))->exists()) {
+            return back()->withErrors([
+                'nuevo_paciente_nombre' => 'Ya existe un paciente con ese nombre. Seleccionalo en la lista para evitar duplicados.',
+            ])->withInput();
+        }
+        $patient = $isQuickPatient ? null : $this->resolvePatient($data['paciente']);
         $dentist = $currentDentist ?? $this->resolveDentist($data['dentista']);
         $collaborator = ! empty($data['collaborator_dentist_id'])
             ? Dentist::findOrFail($data['collaborator_dentist_id'])
@@ -268,7 +286,7 @@ class AppointmentController extends Controller
             }
         }
 
-        if ($conflictingAppointment = $this->findPatientConflictingAppointment($patient, $data['fecha'], $time, $endTime)) {
+        if ($patient && ($conflictingAppointment = $this->findPatientConflictingAppointment($patient, $data['fecha'], $time, $endTime))) {
             return back()
                 ->withErrors(['hora' => $this->patientConflictMessage($conflictingAppointment)])
                 ->withInput();
@@ -282,18 +300,28 @@ class AppointmentController extends Controller
             }
         }
 
-        $appointment = Appointment::create([
-            'patient_id' => $patient->id,
-            'dentist_id' => $dentist->id,
-            'created_by_user_id' => session('access_user_id'),
-            'date' => $data['fecha'],
-            'time' => $time,
-            'end_time' => $endTime,
-            'tipo' => $treatmentName,
-            'estado' => ClinicSetting::current()->default_appointment_status,
-            'color' => $this->treatmentColor($treatmentName),
-        ]);
-        $this->syncAppointmentParticipants($appointment, $dentist, $collaborator);
+        DB::transaction(function () use (&$patient, $isQuickPatient, $data, $dentist, $collaborator, $time, $endTime, $treatmentName): void {
+            if ($isQuickPatient) {
+                $patient = Patient::create([
+                    'nombre' => trim($data['nuevo_paciente_nombre']),
+                    'telefono' => $data['nuevo_paciente_telefono'],
+                    'estado' => 'Activo',
+                ]);
+            }
+
+            $appointment = Appointment::create([
+                'patient_id' => $patient->id,
+                'dentist_id' => $dentist->id,
+                'created_by_user_id' => session('access_user_id'),
+                'date' => $data['fecha'],
+                'time' => $time,
+                'end_time' => $endTime,
+                'tipo' => $treatmentName,
+                'estado' => ClinicSetting::current()->default_appointment_status,
+                'color' => $this->treatmentColor($treatmentName),
+            ]);
+            $this->syncAppointmentParticipants($appointment, $dentist, $collaborator);
+        });
 
         return redirect()->route('citas')->with('success', $collaborator
             ? 'Cita colaborativa creada correctamente en las agendas de ambos doctores.'
@@ -1047,7 +1075,10 @@ class AppointmentController extends Controller
         );
 
         if (! $schedule->enabled) {
-            return 'El dentista no tiene horario disponible ese dia.';
+            return sprintf(
+                'El dentista no trabaja el %s; es un día inhábil.',
+                $requestedStart->locale('es')->isoFormat('dddd')
+            );
         }
 
         $scheduleStart = Carbon::parse("{$date} {$schedule->start_time}");
@@ -1055,7 +1086,7 @@ class AppointmentController extends Controller
 
         if ($requestedStart->lt($scheduleStart) || $requestedEnd->gt($scheduleEnd)) {
             return sprintf(
-                'La cita debe estar dentro del horario del dentista: %s a %s.',
+                'El dentista trabaja de %s a %s; la hora solicitada no está disponible.',
                 $scheduleStart->format('h:i A'),
                 $scheduleEnd->format('h:i A')
             );
@@ -1105,6 +1136,8 @@ class AppointmentController extends Controller
     {
         return [
             'paciente' => 'paciente',
+            'nuevo_paciente_nombre' => 'nombre del nuevo paciente',
+            'nuevo_paciente_telefono' => 'numero de emergencia',
             'dentista' => 'dentista',
             'fecha' => 'fecha',
             'hora' => 'hora de inicio',

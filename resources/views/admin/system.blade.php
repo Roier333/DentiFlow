@@ -4,8 +4,7 @@
 <div class="space-y-6">
     <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-xs font-bold uppercase tracking-[.2em] text-[#9700cf]">Administraci&oacute;n t&eacute;cnica</p>
-            <h1 class="mt-2 text-3xl font-bold text-slate-950">Gesti&oacute;n del sistema</h1>
+            <h1 class="text-3xl font-bold text-slate-950">Gesti&oacute;n del sistema</h1>
         </div>
     </header>
 

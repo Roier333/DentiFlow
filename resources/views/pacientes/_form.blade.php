@@ -17,6 +17,7 @@
     <form method="POST" action="{{ $action }}" class="space-y-5">
         @csrf
         @if($method !== 'POST') @method($method) @endif
+        @if(!empty($origin))<input type="hidden" name="origen" value="{{ $origin }}">@endif
 
         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_4px_20px_rgba(30,34,60,.04)]">
             <div class="flex items-center gap-3 border-b border-slate-100 px-6 py-5"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f6e8ff] text-[#9700cf]"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M5 22v-3a7 7 0 0 1 14 0v3"/></svg></span><div><h2 class="font-bold text-slate-800">Información personal</h2><p class="text-xs text-slate-400">Datos principales para identificar al paciente</p></div></div>

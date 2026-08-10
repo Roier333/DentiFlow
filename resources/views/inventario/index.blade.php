@@ -8,9 +8,8 @@
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <div>
             <h1 class="text-4xl font-bold text-gray-800">Inventario</h1>
-            <p class="text-gray-500 mt-2">Control de stock, alertas de reposición y costos por proveedor.</p>
+            <p class="mt-2 text-gray-500">Control de stock, alertas de reposición y costos por proveedor.</p>
         </div>
-        <a href="{{ route('pacientes') }}" class="inline-flex items-center justify-center rounded-2xl bg-[#9700cf] px-6 py-3 text-white hover:bg-[#512569]">Volver al panel</a>
     </div>
 
     <div class="grid gap-6 md:grid-cols-3 mb-6">

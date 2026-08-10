@@ -13,10 +13,7 @@
             <h1 class="text-4xl font-bold text-gray-800">
                 Detalle de cita
             </h1>
-
-            <p class="text-gray-500 mt-2">
-                Revisa información completa de la cita seleccionada.
-            </p>
+            <p class="mt-2 text-gray-500">Revisa información completa de la cita seleccionada.</p>
 
         </div>
 

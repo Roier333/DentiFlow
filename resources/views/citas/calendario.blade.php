@@ -30,8 +30,7 @@
 <div class="space-y-6">
     <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Agenda cl&iacute;nica</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Calendario</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Calendario</h1>
             <p class="mt-2 text-sm text-slate-500">Organiza citas, horarios disponibles y d&iacute;as no disponibles.</p>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -122,7 +121,7 @@
                             <div class="space-y-2 p-3">
                                 @foreach($slot['blocks'] as $block)
                                     <div class="flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-xs font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
-                                        <span>{{ $block->type }} &middot; D&iacute;a completo</span>
+                                        <span>{{ $block->type }}@if($isOperationalAdmin) &middot; {{ $block->targetUser?->name ?? $block->dentist?->nombre }}@endif &middot; D&iacute;a completo</span>
                                         @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                             @csrf
                                             @method('DELETE')
@@ -183,7 +182,7 @@
                             <div class="space-y-2">
                                 @foreach($day['blocks'] as $block)
                                     <div class="rounded-xl border px-3 py-2 text-[10px] font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
-                                        <span class="block">{{ $block->type }} &middot; D&iacute;a completo</span>
+                                        <span class="block">{{ $block->type }}@if($isOperationalAdmin) &middot; {{ $block->targetUser?->name ?? $block->dentist?->nombre }}@endif &middot; D&iacute;a completo</span>
                                         @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-2" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                             @csrf
                                             @method('DELETE')
@@ -229,7 +228,7 @@
                                 <div class="space-y-1">
                                     @foreach($dayBlocks->take(1) as $block)
                                         <div class="rounded-md border px-2 py-1 text-[9px] font-semibold {{ $blockStyles[$block->type] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
-                                            <span class="block truncate">{{ $block->type }}</span>
+                                            <span class="block truncate">{{ $block->type }}@if($isOperationalAdmin) &middot; {{ $block->targetUser?->name ?? $block->dentist?->nombre }}@endif</span>
                                             @if(!$isDoctor || $block->dentist_id === $doctorDentist?->id)<form method="POST" action="{{ route('calendario.bloqueos.destroy', $block) }}" class="mt-1" onsubmit="return confirm('¿Volver a habilitar este día para nuevas citas?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -337,12 +336,18 @@
         <form method="POST" action="{{ route('calendario.bloqueos.store') }}" class="bg-white">
             @csrf
             <div class="border-b border-slate-100 px-6 py-5">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#9700cf]">Disponibilidad</p>
-                <h2 class="mt-1 text-2xl font-bold text-slate-900">Marcar d&iacute;a no disponible</h2>
-                <p class="mt-1 text-sm text-slate-500">Ese d&iacute;a quedar&aacute; cerrado para nuevas citas.</p>
+                @if(!$isOperationalAdmin)
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#9700cf]">Disponibilidad</p>
+                @endif
+                <h2 class="text-2xl font-bold text-slate-900">Marcar d&iacute;a no disponible</h2>
+                @if(!$isOperationalAdmin)
+                    <p class="mt-1 text-sm text-slate-500">Ese d&iacute;a quedar&aacute; cerrado para nuevas citas.</p>
+                @endif
             </div>
             <div class="grid gap-4 px-6 py-5 sm:grid-cols-2">
-                @if($isAssistant)
+                @if($isOperationalAdmin)
+                    <label class="sm:col-span-2"><span class="text-sm font-semibold text-slate-700">Doctor o asistente</span><select name="target" required class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"><optgroup label="Doctores">@foreach($dentists as $dentist)<option value="dentist:{{ $dentist->id }}">{{ $dentist->nombre }}</option>@endforeach</optgroup><optgroup label="Asistentes">@foreach($assistants as $assistant)<option value="assistant:{{ $assistant->id }}">{{ $assistant->name }}</option>@endforeach</optgroup></select></label>
+                @elseif($isAssistant)
                     <label class="sm:col-span-2"><span class="text-sm font-semibold text-slate-700">Doctor</span><select name="dentist_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">@foreach($dentists as $dentist)<option value="{{ $dentist->id }}">{{ $dentist->nombre }}</option>@endforeach</select></label>
                 @endif
                 <label><span class="text-sm font-semibold text-slate-700">Fecha</span><input type="date" name="date" value="{{ $selectedDate->toDateString() }}" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3"></label>

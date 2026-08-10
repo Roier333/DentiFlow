@@ -5,12 +5,12 @@
 @section('content')
 
 <div class="space-y-6">
-    <div class="flex items-center justify-between mb-6">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">Dentistas</h1>
             <p class="text-sm text-gray-500">Gestiona los profesionales del consultorio.</p>
         </div>
-        <a href="{{ route('dentistas.create') }}" class="inline-flex items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">Agregar dentista</a>
+        <a href="{{ route('dentistas.create') }}" class="inline-flex w-full items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569] sm:w-auto">Agregar dentista</a>
     </div>
 
     @include('partials.flash-success')

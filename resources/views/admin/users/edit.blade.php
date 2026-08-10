@@ -32,8 +32,6 @@
                         'pendiente' => 'Pendiente de autorizacion',
                         'doctor' => 'Doctor',
                         'asistente' => 'Asistente',
-                        'admin' => 'Administrador operativo',
-                        'superadmin' => 'Superadministrador',
                     ] as $value => $label)
                         <option value="{{ $value }}" @selected(old('role', $user->role) === $value)>{{ $label }}</option>
                     @endforeach

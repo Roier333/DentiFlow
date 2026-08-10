@@ -37,10 +37,7 @@
             <h1 class="text-4xl font-bold text-gray-800">
                 Editar cita
             </h1>
-
-            <p class="text-gray-500 mt-2">
-                Ajusta los detalles de la cita y guarda los cambios.
-            </p>
+            <p class="mt-2 text-gray-500">Ajusta los detalles de la cita y guarda los cambios.</p>
 
         </div>
 

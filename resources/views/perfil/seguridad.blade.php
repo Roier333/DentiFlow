@@ -6,8 +6,7 @@
 <div class="mx-auto max-w-5xl space-y-6">
     <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Seguridad</p>
-            <h1 class="mt-1 text-4xl font-bold text-slate-900">Cambiar contrase&ntilde;a</h1>
+            <h1 class="text-4xl font-bold text-slate-900">Cambiar contrase&ntilde;a</h1>
             <p class="mt-2 text-sm text-slate-500">Elige el m&eacute;todo que puedas verificar.</p>
         </div>
         <a href="{{ route('perfil') }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600">&larr; Volver al perfil</a>

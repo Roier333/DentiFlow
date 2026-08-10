@@ -32,6 +32,7 @@
             position: relative;
             top: 0;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
         }
 
@@ -52,6 +53,7 @@
                 margin-left: 0;
                 width: calc(100% - 268px);
                 height: 100vh;
+                height: 100dvh;
                 overflow-y: auto;
                 overflow-x: hidden;
             }
@@ -81,13 +83,13 @@
         ['route' => 'reportes', 'match' => 'reportes*', 'label' => 'Reportes', 'icon' => 'chart', 'roles' => ['doctor']],
         ['route' => 'admin.calendar', 'match' => 'admin.calendar', 'label' => 'Calendario', 'icon' => 'calendar', 'roles' => ['superadmin']],
         ['route' => 'admin.reports', 'match' => 'admin.reports*', 'label' => 'Reportes', 'icon' => 'chart', 'roles' => ['superadmin']],
-        ['route' => 'admin.users', 'match' => 'admin.users*', 'label' => 'Usuarios', 'icon' => 'users', 'roles' => ['superadmin']],
+        ['route' => 'admin.users', 'match' => 'admin.users*', 'label' => 'Usuarios', 'icon' => 'users', 'roles' => ['admin']],
         ['route' => 'admin.system', 'match' => 'admin.system*', 'label' => 'Sistema', 'icon' => 'settings', 'roles' => ['superadmin']],
         ['route' => 'admin.preferences', 'match' => ['admin.preferences*', 'admin.settings*'], 'label' => 'Preferencias', 'icon' => 'settings', 'roles' => ['superadmin']],
     ];
     $roleNavigation = [
-        'superadmin' => ['inicio', 'admin.users', 'admin.system', 'admin.preferences'],
-        'admin' => ['inicio', 'calendario', 'citas', 'pacientes', 'expedientes', 'pacientes.tratamientos', 'inventario', 'reportes'],
+        'superadmin' => ['inicio', 'admin.system', 'admin.preferences'],
+        'admin' => ['inicio', 'calendario', 'citas', 'pacientes', 'expedientes', 'pacientes.tratamientos', 'inventario', 'reportes', 'admin.users'],
         'doctor' => ['inicio', 'calendario', 'citas', 'pacientes', 'expedientes', 'pacientes.tratamientos', 'reportes'],
         'asistente' => $clinicSettings->assistantAllowedSections(),
     ];
@@ -95,7 +97,7 @@
 @endphp
 <div id="app-shell" class="h-screen overflow-hidden lg:flex" style="margin:0;padding-top:0;">
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/40 backdrop-blur-sm lg:hidden"></div>
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-[268px] -translate-x-full flex-col bg-[#512569] text-white shadow-2xl transition-transform duration-300 lg:h-screen lg:translate-x-0">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-[min(268px,86vw)] -translate-x-full flex-col bg-[#512569] text-white shadow-2xl transition-transform duration-300 lg:h-screen lg:w-[268px] lg:translate-x-0">
         <div class="flex h-20 items-center gap-3 border-b border-white/10 px-6">
             <a href="{{ route('inicio') }}" class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#9700cf] shadow-lg shadow-[#512569]/30 transition hover:bg-[#a800e6]" aria-label="Ir al resumen" title="Ir al resumen">
                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.3 3.7c1.8-.8 3 .3 4.7.3s2.9-1.1 4.7-.3c2.6 1.2 3 4.8 1.9 7.3-.9 2.1-1.4 3.4-1.6 6.6-.1 1.7-.9 3.4-2.1 3.4-1.7 0-1.2-4.8-2.9-4.8S10.8 21 9.1 21C7.9 21 7.1 19.3 7 17.6c-.2-3.2-.7-4.5-1.6-6.6C4.3 8.5 4.7 4.9 7.3 3.7Z"/></svg>
@@ -139,7 +141,7 @@
             </a>
         </div>
     </aside>
-    <div id="content-shell" class="h-screen min-w-0 flex-1 overflow-y-auto">
+    <div id="content-shell" class="h-[100dvh] min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
         <header class="sticky top-0 z-20 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7">
             <button id="sidebar-open" class="mr-3 rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden" aria-label="Abrir menú"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
             <div id="global-search" class="relative hidden max-w-md flex-1 sm:block">
@@ -157,7 +159,7 @@
                 </div>
             </div>
             <div class="ml-auto flex items-center gap-2">
-                <span class="hidden text-right sm:block"><span class="block text-xs font-semibold text-slate-700">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM') }}</span><span class="block text-[10px] text-slate-400">{{ $currentRole === 'superadmin' ? 'Panel técnico' : ($currentRole === 'admin' ? 'Administración clínica' : ($currentRole === 'doctor' ? 'Área clínica' : 'Panel operativo')) }}</span></span>
+                <span class="hidden text-right sm:block"><span class="block text-xs font-semibold text-slate-700">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM') }}</span><span class="block text-[10px] text-slate-400">{{ $currentRole === 'superadmin' ? 'Panel técnico' : ($currentRole === 'admin' ? 'Resumen' : ($currentRole === 'doctor' ? 'Área clínica' : 'Panel operativo')) }}</span></span>
                 <details class="group relative ml-2">
                     <summary class="relative flex cursor-pointer list-none rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50 hover:text-[#9700cf]" aria-label="Notificaciones">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg>
@@ -238,7 +240,7 @@
                 </form>
             </div>
         </header>
-        <main class="p-4 sm:p-7 xl:p-9"><div class="mx-auto max-w-[1500px]">@yield('content')</div></main>
+        <main id="main-content" class="min-w-0 overflow-x-hidden p-3 sm:p-7 xl:p-9"><div class="mx-auto min-w-0 max-w-[1500px]">@yield('content')</div></main>
     </div>
 </div>
 @stack('scripts')

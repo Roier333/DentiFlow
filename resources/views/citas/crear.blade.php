@@ -7,6 +7,7 @@
     $fieldClass = fn (string $field) => 'mt-2 w-full rounded-2xl border px-4 py-3 focus:outline-none focus:ring-2 ' . ($errors->has($field) ? 'border-red-400 bg-red-50/40 focus:ring-red-200' : 'border-gray-300 focus:ring-purple-300');
     $fieldDot = fn (string $field) => $errors->has($field) ? '<span data-error-for="'.$field.'" class="ml-2 inline-block h-2.5 w-2.5 rounded-full bg-red-500 align-middle" title="'.$errors->first($field).'"></span>' : '';
     $customTreatmentOption = '__custom_treatment__';
+    $quickPatientOption = '__quick_patient__';
 @endphp
 
 <div>
@@ -18,10 +19,7 @@
             <h1 class="text-4xl font-bold text-gray-800">
                 Agendar nueva cita
             </h1>
-
-            <p class="text-gray-500 mt-2">
-                Complete el formulario para registrar una cita.
-            </p>
+            <p class="mt-2 text-gray-500">Complete el formulario para registrar una cita.</p>
 
         </div>
 
@@ -49,11 +47,12 @@
             <div class="grid gap-6 md:grid-cols-2">
                 <label class="block">
                     <span class="text-gray-700">Paciente {!! $fieldDot('paciente') !!}</span>
-                    <select name="paciente" class="{{ $fieldClass('paciente') }}">
+                    <select id="appointment-patient" name="paciente" class="{{ $fieldClass('paciente') }}">
                         <option value="">Seleccione un paciente</option>
                         @foreach($pacientes as $paciente)
                             <option value="{{ $paciente }}" {{ old('paciente') === $paciente ? 'selected' : '' }}>{{ $paciente }}</option>
                         @endforeach
+                        <option value="{{ $quickPatientOption }}" @selected(old('paciente') === $quickPatientOption)>+ Nuevo paciente rapido</option>
                     </select>
                 </label>
 
@@ -109,6 +108,24 @@
                 </label>
             </div>
 
+            <section id="quick-patient-wrapper" class="hidden rounded-2xl border border-[#d3a2f2] bg-[#fbf0ff] p-5">
+                <div>
+                    <p class="text-sm font-bold text-[#512569]">Nuevo paciente rapido</p>
+                    <p class="mt-1 text-xs text-[#7a6984]">Crea al paciente y agenda la cita ahora. El nombre y el numero de emergencia son obligatorios; podras completar el resto del expediente despues.</p>
+                </div>
+                <div class="mt-4 grid gap-5 md:grid-cols-2">
+                    <label class="block">
+                        <span class="text-sm font-semibold text-slate-700">Nombre completo {!! $fieldDot('nuevo_paciente_nombre') !!}</span>
+                        <input id="quick-patient-name" type="text" name="nuevo_paciente_nombre" value="{{ old('nuevo_paciente_nombre') }}" maxlength="255" placeholder="Nombre y apellidos" class="{{ $fieldClass('nuevo_paciente_nombre') }}">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-semibold text-slate-700">Numero de emergencia {!! $fieldDot('nuevo_paciente_telefono') !!}</span>
+                        <input id="quick-patient-phone" type="tel" name="nuevo_paciente_telefono" value="{{ old('nuevo_paciente_telefono') }}" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" placeholder="2221234567" class="{{ $fieldClass('nuevo_paciente_telefono') }}">
+                        <span class="mt-2 block text-xs text-slate-500">Debe contener exactamente 10 digitos.</span>
+                    </label>
+                </div>
+            </section>
+
             <section class="rounded-2xl border border-teal-200 bg-teal-50/60 p-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
                     <div class="flex-1">
@@ -160,11 +177,16 @@
         const startInput = document.getElementById('appointment-start-time');
         const endInput = document.getElementById('appointment-end-time');
         const treatmentSelect = document.getElementById('appointment-treatment');
+        const patientSelect = document.getElementById('appointment-patient');
+        const quickPatientWrapper = document.getElementById('quick-patient-wrapper');
+        const quickPatientName = document.getElementById('quick-patient-name');
+        const quickPatientPhone = document.getElementById('quick-patient-phone');
         const emergencyWrapper = document.getElementById('emergency-treatment-wrapper');
         const errorBox = document.getElementById('appointment-errors');
         const duration = Number(@json($appointmentDuration));
         const today = @json($defaultDate);
         const customTreatmentOption = @json($customTreatmentOption);
+        const quickPatientOption = @json($quickPatientOption);
         const pad = value => String(value).padStart(2, '0');
         const currentTime = () => {
             const now = new Date();
@@ -200,8 +222,17 @@
             emergencyWrapper?.classList.toggle('hidden', treatmentSelect?.value !== customTreatmentOption);
         };
         treatmentSelect?.addEventListener('change', syncEmergencyTreatment);
+        const syncQuickPatient = () => {
+            const isQuick = patientSelect?.value === quickPatientOption;
+            quickPatientWrapper?.classList.toggle('hidden', !isQuick);
+            if (quickPatientName) quickPatientName.required = isQuick;
+            if (quickPatientPhone) quickPatientPhone.required = isQuick;
+            if (isQuick) quickPatientName?.focus();
+        };
+        patientSelect?.addEventListener('change', syncQuickPatient);
         syncTimeLimits();
         syncEmergencyTreatment();
+        syncQuickPatient();
         setInterval(syncTimeLimits, 60000);
 
         if (errorBox) {

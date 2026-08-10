@@ -3,8 +3,7 @@
 @section('content')
 <div class="mx-auto max-w-5xl space-y-6">
     <div>
-        <a href="{{ route('inicio') }}" class="text-xs font-semibold text-[#9700cf]">Estado del sistema</a>
-        <h1 class="mt-3 text-3xl font-bold tracking-tight">Preferencias</h1>
+        <h1 class="text-3xl font-bold tracking-tight">Preferencias</h1>
         <p class="mt-2 text-sm text-slate-500">Configura accesos, operación diaria y reglas generales de la clínica.</p>
     </div>
 

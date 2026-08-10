@@ -8,24 +8,19 @@
         'pendiente' => 'Pendiente',
         'doctor' => 'Doctor',
         'asistente' => 'Asistente',
-        'admin' => 'Administrador operativo',
-        'superadmin' => 'Superadministrador',
     ];
 
     $roleBadges = [
         'pendiente' => 'bg-amber-50 text-amber-700',
         'doctor' => 'bg-[#f6e8ff] text-[#9700cf]',
         'asistente' => 'bg-violet-50 text-violet-700',
-        'admin' => 'bg-[#ead2fb] text-[#8200b8]',
-        'superadmin' => 'bg-slate-900 text-white',
     ];
 @endphp
 <div class="space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Administración</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Usuarios del sistema</h1>
-            <p class="mt-2 max-w-2xl text-sm text-slate-500">Consulta las cuentas existentes y administra sus accesos.</p>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Usuarios del sistema</h1>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">Revisa solicitudes y administra el acceso de doctores y asistentes.</p>
         </div>
     </section>
 
@@ -128,8 +123,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <div class="border-b border-slate-100 px-6 py-5">
-                                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#9700cf]">Eliminar usuario</p>
-                                            <h2 class="mt-1 text-2xl font-bold text-slate-900">Confirmar eliminación</h2>
+                                            <h2 class="text-2xl font-bold text-slate-900">Confirmar eliminación</h2>
                                             <p class="mt-2 text-sm text-slate-500">Este usuario ya no podrá acceder al sistema.</p>
                                         </div>
                                         <div class="px-6 py-5">

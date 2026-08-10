@@ -8,7 +8,7 @@
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-4xl font-bold text-gray-800">Agregar material al inventario</h1>
-            <p class="text-gray-500 mt-2">Registra un nuevo material dental con su stock, costo y proveedor.</p>
+            <p class="mt-2 text-gray-500">Registra un nuevo material dental con su stock, costo y proveedor.</p>
         </div>
         <a href="{{ route('inventario') }}" class="bg-gray-200 text-gray-800 px-6 py-3 rounded-2xl hover:bg-gray-300">Volver al inventario</a>
     </div>

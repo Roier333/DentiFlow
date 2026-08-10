@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Appointment;
 use App\Models\Dentist;
 use App\Models\Patient;
@@ -10,6 +11,14 @@ use App\Models\User;
 use App\Services\AppointmentCompletionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportController extends Controller
 {
@@ -252,18 +261,223 @@ class ReportController extends Controller
             ],
         };
 
-        $filename = 'reporte-'.$reportType.'-dentiflow-'.$from.'-'.$to.'.csv';
+        $titles = [
+            'ganancias' => 'Reporte de ganancias',
+            'citas' => 'Reporte de citas',
+            'pacientes' => 'Reporte de pacientes',
+            'tratamientos' => 'Reporte de tratamientos',
+        ];
+        $columnLabels = [
+            'fecha' => 'Fecha',
+            'hora' => 'Hora',
+            'paciente' => 'Paciente',
+            'telefono' => 'Telefono',
+            'tratamiento' => 'Tratamiento',
+            'tipo' => 'Tipo',
+            'estado' => 'Estado',
+            'dentista' => 'Dentista',
+            'citas' => 'Citas',
+            'tratamientos' => 'Tratamientos',
+            'ganancia' => 'Ganancia',
+            'ganancias' => 'Ganancias',
+            'costo' => 'Costo',
+        ];
+        $moneyColumns = ['ganancia', 'ganancias', 'costo'];
+        $title = $titles[$reportType];
+        $filename = 'reporte-'.$reportType.'-dentiflow-'.$from.'-'.$to.'.pdf';
 
-        return response()->streamDownload(function () use ($headers, $rows) {
-            $output = fopen('php://output', 'w');
-            fputcsv($output, $headers);
+        return Pdf::loadView('reportes.pdf', [
+            'title' => $title,
+            'reportType' => $reportType,
+            'headers' => $headers,
+            'columnLabels' => $columnLabels,
+            'moneyColumns' => $moneyColumns,
+            'rows' => $rows,
+            'from' => $from,
+            'to' => $to,
+            'generatedAt' => now(),
+            'generatedBy' => $request->session()->get('access_name', 'Usuario DentiFlow'),
+        ])->setPaper('letter', 'landscape')->download($filename);
+    }
 
-            foreach ($rows as $row) {
-                fputcsv($output, $row);
+    public function exportExcel(Request $request)
+    {
+        $this->completeOverdueAppointments($request);
+
+        $periodo = $request->query('periodo', 'Ultimos 6 meses');
+        [$from, $to] = $this->resolvePeriod($periodo, $request->query('desde'), $request->query('hasta'));
+        $reportType = in_array($request->query('reporte', 'tratamientos'), ['ganancias', 'citas', 'pacientes', 'tratamientos'], true)
+            ? $request->query('reporte', 'tratamientos')
+            : 'tratamientos';
+        $isDoctor = $request->session()->get('access_role') === 'doctor';
+        $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
+        $appointments = $this->scopeAppointmentsForRole(
+            Appointment::with(['patient', 'dentist'])
+                ->whereDate('date', '>=', $from)
+                ->whereDate('date', '<=', $to)
+                ->orderBy('date')->orderBy('time'),
+            $isDoctor,
+            $doctorDentist
+        )->get();
+        $treatments = $this->scopeTreatmentsForRole(
+            Treatment::with(['patient', 'appointment.dentist'])
+                ->whereDate('fecha', '>=', $from)
+                ->whereDate('fecha', '<=', $to)
+                ->orderBy('fecha'),
+            $isDoctor,
+            $doctorDentist
+        )->get();
+
+        [$headers, $rows] = match ($reportType) {
+            'ganancias' => [
+                ['fecha', 'paciente', 'tratamiento', 'dentista', 'ganancia'],
+                $treatments->where('estado', 'Realizado')->map(fn (Treatment $treatment) => [
+                    'fecha' => $treatment->fecha?->toDateString(),
+                    'paciente' => $treatment->patient?->nombre ?? $treatment->paciente,
+                    'tratamiento' => $treatment->tratamiento,
+                    'dentista' => $treatment->appointment?->dentist?->nombre ?? 'Sin dentista',
+                    'ganancia' => (float) $treatment->costo,
+                ])->values(),
+            ],
+            'citas' => [
+                ['fecha', 'hora', 'paciente', 'tipo', 'estado', 'dentista'],
+                $appointments->map(fn (Appointment $appointment) => [
+                    'fecha' => $appointment->date?->toDateString(),
+                    'hora' => $appointment->time,
+                    'paciente' => $appointment->patient?->nombre ?? 'Sin paciente',
+                    'tipo' => trim((string) $appointment->procedimiento_extra) !== '' ? $appointment->tipo.' + '.$appointment->procedimiento_extra : $appointment->tipo,
+                    'estado' => $appointment->estado,
+                    'dentista' => $appointment->dentist?->nombre ?? 'Sin dentista',
+                ]),
+            ],
+            'pacientes' => [
+                ['paciente', 'telefono', 'citas', 'tratamientos', 'ganancias'],
+                $appointments->pluck('patient')->merge($treatments->pluck('patient'))->filter()->unique('id')->map(fn (Patient $patient) => [
+                    'paciente' => $patient->nombre,
+                    'telefono' => $patient->telefono ?: 'Sin telefono',
+                    'citas' => $appointments->where('patient_id', $patient->id)->count(),
+                    'tratamientos' => $treatments->where('patient_id', $patient->id)->count(),
+                    'ganancias' => (float) $treatments->where('patient_id', $patient->id)->where('estado', 'Realizado')->sum('costo'),
+                ])->values(),
+            ],
+            default => [
+                ['fecha', 'paciente', 'tratamiento', 'tipo', 'estado', 'costo', 'dentista'],
+                $treatments->map(fn (Treatment $treatment) => [
+                    'fecha' => $treatment->fecha?->toDateString(),
+                    'paciente' => $treatment->patient?->nombre ?? $treatment->paciente,
+                    'tratamiento' => $treatment->tratamiento,
+                    'tipo' => $treatment->tipo,
+                    'estado' => $treatment->estado,
+                    'costo' => (float) $treatment->costo,
+                    'dentista' => $treatment->appointment?->dentist?->nombre ?? 'Sin dentista',
+                ]),
+            ],
+        };
+
+        $titles = [
+            'ganancias' => 'Reporte de ganancias',
+            'citas' => 'Reporte de citas',
+            'pacientes' => 'Reporte de pacientes',
+            'tratamientos' => 'Reporte de tratamientos',
+        ];
+        $labels = [
+            'fecha' => 'Fecha', 'hora' => 'Hora', 'paciente' => 'Paciente', 'telefono' => 'Telefono',
+            'tratamiento' => 'Tratamiento', 'tipo' => 'Tipo', 'estado' => 'Estado', 'dentista' => 'Dentista',
+            'citas' => 'Citas', 'tratamientos' => 'Tratamientos', 'ganancia' => 'Ganancia',
+            'ganancias' => 'Ganancias', 'costo' => 'Costo',
+        ];
+
+        return $this->downloadExcelReport(
+            $titles[$reportType],
+            $reportType,
+            $headers,
+            $labels,
+            $rows,
+            $from,
+            $to,
+            $request->session()->get('access_name', 'Usuario DentiFlow')
+        );
+    }
+
+    private function downloadExcelReport(string $title, string $reportType, array $headers, array $labels, $rows, string $from, string $to, string $generatedBy)
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getProperties()->setCreator('DentiFlow')->setTitle($title)->setSubject('Reporte clinico');
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(ucfirst($reportType));
+        $lastColumn = Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->mergeCells("A1:{$lastColumn}1");
+        $sheet->setCellValue('A1', $title);
+        $sheet->mergeCells("A2:{$lastColumn}2");
+        $sheet->setCellValue('A2', 'Periodo: '.Carbon::parse($from)->format('d/m/Y').' al '.Carbon::parse($to)->format('d/m/Y'));
+        $sheet->mergeCells("A3:{$lastColumn}3");
+        $sheet->setCellValue('A3', 'Generado por '.$generatedBy.' el '.now()->format('d/m/Y H:i'));
+        $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 18, 'color' => ['RGB' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['RGB' => '9700CF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(30);
+        $headerRow = 5;
+        foreach ($headers as $index => $header) {
+            $column = Coordinate::stringFromColumnIndex($index + 1);
+            $sheet->setCellValue($column.$headerRow, $labels[$header] ?? ucfirst($header));
+        }
+        $sheet->getStyle("A{$headerRow}:{$lastColumn}{$headerRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['RGB' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['RGB' => '512569']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['RGB' => 'EAD2FB']]],
+        ]);
+        $moneyColumns = ['ganancia', 'ganancias', 'costo'];
+        $rowNumber = 6;
+        foreach ($rows as $row) {
+            foreach ($headers as $index => $header) {
+                $column = Coordinate::stringFromColumnIndex($index + 1);
+                $value = $row[$header] ?? '';
+                if ($header === 'fecha' && $value) {
+                    $sheet->setCellValue($column.$rowNumber, ExcelDate::PHPToExcel(Carbon::parse($value)));
+                    $sheet->getStyle($column.$rowNumber)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                } elseif (in_array($header, array_merge($moneyColumns, ['citas', 'tratamientos']), true)) {
+                    $sheet->setCellValueExplicit($column.$rowNumber, (float) $value, DataType::TYPE_NUMERIC);
+                } else {
+                    $sheet->setCellValueExplicit($column.$rowNumber, (string) $value, DataType::TYPE_STRING);
+                }
+                if (in_array($header, $moneyColumns, true)) {
+                    $sheet->getStyle($column.$rowNumber)->getNumberFormat()->setFormatCode('"$"#,##0.00');
+                }
             }
+            $rowNumber++;
+        }
+        $lastDataRow = max(5, $rowNumber - 1);
+        if ($rows->isNotEmpty()) {
+            $sheet->getStyle("A6:{$lastColumn}{$lastDataRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('E7DDEC');
+            $sheet->getStyle("A6:{$lastColumn}{$lastDataRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+            $sheet->setAutoFilter("A5:{$lastColumn}{$lastDataRow}");
+        }
+        $moneyHeader = collect($headers)->first(fn ($header) => in_array($header, $moneyColumns, true));
+        if ($moneyHeader && $rows->isNotEmpty()) {
+            $totalRow = $rowNumber + 1;
+            $moneyIndex = array_search($moneyHeader, $headers, true) + 1;
+            $moneyColumn = Coordinate::stringFromColumnIndex($moneyIndex);
+            $labelColumn = Coordinate::stringFromColumnIndex(max(1, $moneyIndex - 1));
+            $sheet->setCellValue($labelColumn.$totalRow, 'TOTAL');
+            $sheet->setCellValue($moneyColumn.$totalRow, "=SUM({$moneyColumn}6:{$moneyColumn}{$lastDataRow})");
+            $sheet->getStyle($labelColumn.$totalRow.':'.$moneyColumn.$totalRow)->getFont()->setBold(true);
+            $sheet->getStyle($moneyColumn.$totalRow)->getNumberFormat()->setFormatCode('"$"#,##0.00');
+        }
+        $widths = ['fecha' => 14, 'hora' => 13, 'paciente' => 28, 'telefono' => 17, 'tratamiento' => 28, 'tipo' => 24, 'estado' => 17, 'dentista' => 26, 'citas' => 12, 'tratamientos' => 16, 'ganancia' => 16, 'ganancias' => 16, 'costo' => 16];
+        foreach ($headers as $index => $header) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($index + 1))->setWidth($widths[$header] ?? 18);
+        }
+        $sheet->freezePane('A6');
+        $sheet->setSelectedCell('A1');
+        $filename = 'reporte-'.$reportType.'-dentiflow-'.$from.'-'.$to.'.xlsx';
 
-            fclose($output);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return response()->streamDownload(function () use ($spreadsheet): void {
+            (new Xlsx($spreadsheet))->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+        }, $filename, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
     private function resolvePeriod(string $periodo, ?string $desde, ?string $hasta): array

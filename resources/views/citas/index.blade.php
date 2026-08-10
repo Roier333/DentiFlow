@@ -54,11 +54,8 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#9700cf]/70">Agenda clínica</p>
-            <h1 class="mt-2 text-4xl font-bold text-slate-900">Citas</h1>
-            <p class="mt-2 max-w-2xl text-slate-500">
-                Agenda, confirma y da seguimiento a tus citas.
-            </p>
+            <h1 class="text-4xl font-bold text-slate-900">Citas</h1>
+            <p class="mt-2 max-w-2xl text-slate-500">Agenda, confirma y da seguimiento a tus citas.</p>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row">

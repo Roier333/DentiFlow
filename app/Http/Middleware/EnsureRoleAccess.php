@@ -54,7 +54,11 @@ class EnsureRoleAccess
             return redirect()->route('register.pending');
         }
 
-        if ($role !== 'superadmin' && Str::is('admin.*', $routeName)) {
+        if ($role === 'superadmin' && Str::is('admin.users*', $routeName)) {
+            return redirect()->route('inicio')->with('access_denied', 'La gestión de usuarios y solicitudes corresponde al administrador operativo.');
+        }
+
+        if ($role !== 'superadmin' && ! ($role === 'admin' && Str::is('admin.users*', $routeName)) && Str::is('admin.*', $routeName)) {
             $roleLabel = match ($role) {
                 'doctor' => 'Doctor',
                 'asistente' => 'Asistente',
@@ -75,7 +79,7 @@ class EnsureRoleAccess
         $settings = ClinicSetting::current();
         $permissions = [
             'superadmin' => ['inicio', 'admin.*', 'dentistas*', 'perfil*', 'logout'],
-            'admin' => ['inicio', 'calendario*', 'citas*', 'pacientes*', 'expedientes*', 'reportes*', 'inventario*', 'perfil*', 'logout'],
+            'admin' => ['inicio', 'calendario*', 'citas*', 'pacientes*', 'expedientes*', 'reportes*', 'inventario*', 'admin.users*', 'perfil*', 'logout'],
             'doctor' => ['inicio', 'calendario*', 'citas*', 'pacientes*', 'expedientes*', 'reportes*', 'perfil*', 'logout'],
             'asistente' => $settings->assistantAllowedRoutes(),
         ];

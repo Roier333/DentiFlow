@@ -6,8 +6,7 @@
 <div class="space-y-6">
     <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#9700cf]/70">Seguimiento</p>
-            <h1 class="mt-2 text-4xl font-bold text-slate-900">Historial de citas</h1>
+            <h1 class="text-4xl font-bold text-slate-900">Historial de citas</h1>
             <p class="mt-2 text-sm text-slate-500">{{ session('access_role') === 'doctor' ? 'Consulta y recupera tus citas canceladas.' : 'Consulta el historial del consultorio y recupera citas canceladas.' }}</p>
         </div>
         <a href="{{ route('citas') }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-semibold text-slate-600">&larr; Volver a citas</a>

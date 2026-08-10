@@ -120,6 +120,58 @@ class AppointmentDentistSessionTest extends TestCase
         ]);
     }
 
+    public function test_appointment_can_create_and_select_a_quick_patient_with_an_emergency_number(): void
+    {
+        $dentist = Dentist::create(['nombre' => 'Dra. Registro Rapido', 'telefono' => '2220000310']);
+        Treatment::create([
+            'paciente' => 'Catalogo',
+            'tratamiento' => 'Consulta inicial',
+            'tipo' => 'General',
+            'fecha' => now()->toDateString(),
+            'estado' => 'Activo',
+        ]);
+
+        $this->withSession(['access_role' => 'asistente'])
+            ->get(route('citas.create'))
+            ->assertOk()
+            ->assertSee('+ Nuevo paciente rapido')
+            ->assertSee('name="nuevo_paciente_nombre"', false)
+            ->assertSee('Numero de emergencia');
+
+        $this->withSession(['access_role' => 'asistente'])->post(route('citas.store'), [
+            'paciente' => '__quick_patient__',
+            'nuevo_paciente_nombre' => 'Paciente Sin Emergencia',
+            'dentista' => $dentist->nombre,
+            'fecha' => now()->next('Monday')->toDateString(),
+            'hora' => '10:00',
+            'hora_fin' => '11:00',
+            'tipo' => 'Consulta inicial',
+        ])->assertSessionHasErrors('nuevo_paciente_telefono');
+
+        $this->assertDatabaseMissing('patients', ['nombre' => 'Paciente Sin Emergencia']);
+
+        $response = $this->withSession(['access_role' => 'asistente'])->post(route('citas.store'), [
+            'paciente' => '__quick_patient__',
+            'nuevo_paciente_nombre' => 'Paciente Registro Rapido',
+            'nuevo_paciente_telefono' => '2221234567',
+            'dentista' => $dentist->nombre,
+            'fecha' => now()->next('Monday')->toDateString(),
+            'hora' => '12:00',
+            'hora_fin' => '13:00',
+            'tipo' => 'Consulta inicial',
+        ]);
+
+        $patient = Patient::where('nombre', 'Paciente Registro Rapido')->firstOrFail();
+
+        $response->assertRedirect(route('citas'));
+        $this->assertSame('2221234567', $patient->telefono);
+        $this->assertDatabaseHas('appointments', [
+            'patient_id' => $patient->id,
+            'dentist_id' => $dentist->id,
+            'tipo' => 'Consulta inicial',
+        ]);
+    }
+
     public function test_doctor_session_without_existing_user_creates_linked_dentist(): void
     {
         Treatment::create([
@@ -603,10 +655,40 @@ class AppointmentDentistSessionTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('hora');
+        $response->assertSessionHasErrors([
+            'hora' => 'El dentista trabaja de 09:00 AM a 05:00 PM; la hora solicitada no está disponible.',
+        ]);
         $this->assertDatabaseMissing('appointments', [
             'dentist_id' => $dentist->id,
             'date' => $date.' 00:00:00',
             'time' => '18:15:00',
+        ]);
+    }
+
+    public function test_appointment_shows_an_inactive_day_message_when_dentist_does_not_work(): void
+    {
+        $patient = Patient::create(['nombre' => 'Paciente día inhábil', 'telefono' => '2220000000', 'estado' => 'Activo']);
+        $dentist = Dentist::create(['nombre' => 'Dra. Día inhábil', 'telefono' => '2220000000']);
+        Treatment::create([
+            'paciente' => $patient->nombre,
+            'tratamiento' => 'Consulta día inhábil',
+            'tipo' => 'Preventivo',
+            'fecha' => now()->toDateString(),
+        ]);
+
+        $date = now()->next('Sunday')->toDateString();
+
+        $response = $this->withSession(['access_role' => 'asistente'])->post(route('citas.store'), [
+            'paciente' => $patient->nombre,
+            'dentista' => $dentist->nombre,
+            'fecha' => $date,
+            'hora' => '10:00',
+            'hora_fin' => '11:00',
+            'tipo' => 'Consulta día inhábil',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'hora' => 'El dentista no trabaja el domingo; es un día inhábil.',
         ]);
     }
 

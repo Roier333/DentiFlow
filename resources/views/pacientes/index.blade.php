@@ -13,11 +13,8 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#9700cf]/70">Directorio clínico</p>
-            <h1 class="mt-2 text-4xl font-bold text-slate-900">Pacientes</h1>
-            <p class="mt-2 max-w-2xl text-slate-500">
-                Registra pacientes y consulta sus datos principales.
-            </p>
+            <h1 class="text-4xl font-bold text-slate-900">Pacientes</h1>
+            <p class="mt-2 max-w-2xl text-slate-500">Registra pacientes y consulta sus datos principales.</p>
         </div>
 
         <a href="{{ route('pacientes.create') }}" class="inline-flex items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">
@@ -90,35 +87,31 @@
                             $segments = explode(' ', trim($paciente['nombre'] ?? ''));
                             $initials = collect($segments)->filter()->map(fn($segment) => strtoupper(substr($segment, 0, 1)))->take(2)->join('');
                         @endphp
-                        <tr class="transition hover:bg-slate-50">
+                        <tr data-edit-url="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" tabindex="0" role="link" aria-label="Editar paciente {{ $paciente['nombre'] }}" class="cursor-pointer transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#9700cf]">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ead2fb] text-sm font-bold text-[#9700cf] ring-1 ring-purple-200">
                                         {{ $initials ?: 'PX' }}
                                     </div>
                                     <div>
-                                        <p class="font-semibold text-slate-900">{{ $paciente['nombre'] }}</p>
-                                        <p class="mt-1 text-sm text-slate-500">Expediente disponible</p>
+                                        <a href="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" class="font-semibold text-slate-900 hover:text-[#9700cf]">{{ $paciente['nombre'] }}</a>
+                                        <p class="mt-1 text-sm {{ $paciente->telefono && $paciente->direccion ? 'text-slate-500' : 'font-semibold text-amber-600' }}">{{ $paciente->telefono && $paciente->direccion ? 'Expediente disponible' : 'Expediente incompleto' }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-5 py-4"><a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="inline-flex items-center gap-2 font-semibold text-[#9700cf] hover:text-[#512569]" aria-label="Llamar a {{ $paciente['nombre'] }}">{{ $paciente['telefono'] }}</a></td>
+                            <td class="px-5 py-4">
+                                @if($paciente['telefono'])
+                                    <a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="inline-flex items-center gap-2 font-semibold text-[#9700cf] hover:text-[#512569]" aria-label="Llamar a {{ $paciente['nombre'] }}">{{ $paciente['telefono'] }}</a>
+                                @else
+                                    <span class="text-sm font-medium text-amber-600">Sin telefono</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-4 text-slate-600">{{ $paciente->ultima_visita?->format('d/m/Y') ?? 'Nuevo' }}</td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-center">
-                                    <button type="button" popovertarget="patient-actions-desktop-{{ $paciente['id'] }}" class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]" aria-label="Acciones de {{ $paciente['nombre'] }}">
-                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="18" cy="12" r="1.7" /></svg>
+                                    <button type="button" data-delete-url="{{ route('pacientes.destroy', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" data-patient-name="{{ $paciente['nombre'] }}" class="js-delete-patient inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-200 bg-white text-fuchsia-600 transition hover:bg-fuchsia-50 hover:text-fuchsia-700" aria-label="Eliminar paciente {{ $paciente['nombre'] }}" title="Eliminar paciente">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
                                     </button>
-                                    <div id="patient-actions-desktop-{{ $paciente['id'] }}" popover class="w-64 overflow-hidden rounded-2xl border border-[#ead2fb] bg-white p-0 text-left shadow-2xl">
-                                        <div class="border-b border-slate-100 px-5 py-4">
-                                            <p class="font-bold text-slate-800">Acciones</p>
-                                            <p class="mt-1 truncate text-xs text-slate-400">{{ $paciente['nombre'] }}</p>
-                                        </div>
-                                        <div class="space-y-1 p-2 text-sm font-semibold">
-                                            <a href="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" class="block rounded-xl px-3 py-2.5 text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">Editar</a>
-                                            <button type="button" data-delete-url="{{ route('pacientes.destroy', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" data-patient-name="{{ $paciente['nombre'] }}" class="js-delete-patient block w-full text-left rounded-xl px-3 py-2.5 text-fuchsia-600 transition hover:bg-fuchsia-50">Eliminar</button>
-                                        </div>
-                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -139,31 +132,25 @@
                     $segments = explode(' ', trim($paciente['nombre'] ?? ''));
                     $initials = collect($segments)->filter()->map(fn($segment) => strtoupper(substr($segment, 0, 1)))->take(2)->join('');
                 @endphp
-                <article class="p-5">
+                <article data-edit-url="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" tabindex="0" role="link" aria-label="Editar paciente {{ $paciente['nombre'] }}" class="cursor-pointer p-5 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#9700cf]">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ead2fb] text-sm font-bold text-[#9700cf] ring-1 ring-purple-200">
                                 {{ $initials ?: 'PX' }}
                             </div>
                             <div class="min-w-0">
-                                <h3 class="truncate text-base font-semibold text-slate-900">{{ $paciente['nombre'] }}</h3>
-                                <a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="mt-1 inline-flex text-sm font-semibold text-[#9700cf]">{{ $paciente['telefono'] }}</a>
+                                <a href="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" class="block truncate text-base font-semibold text-slate-900 hover:text-[#9700cf]">{{ $paciente['nombre'] }}</a>
+                                @if($paciente['telefono'])
+                                    <a href="tel:{{ preg_replace('/\D+/', '', $paciente['telefono']) }}" class="mt-1 inline-flex text-sm font-semibold text-[#9700cf]">{{ $paciente['telefono'] }}</a>
+                                @else
+                                    <span class="mt-1 block text-sm font-semibold text-amber-600">Sin telefono</span>
+                                @endif
                             </div>
                         </div>
                         <div class="shrink-0">
-                            <button type="button" popovertarget="patient-actions-mobile-{{ $paciente['id'] }}" class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]" aria-label="Acciones de {{ $paciente['nombre'] }}">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="18" cy="12" r="1.7" /></svg>
+                            <button type="button" data-delete-url="{{ route('pacientes.destroy', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" data-patient-name="{{ $paciente['nombre'] }}" class="js-delete-patient inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-fuchsia-200 bg-white text-fuchsia-600 transition hover:bg-fuchsia-50 hover:text-fuchsia-700" aria-label="Eliminar paciente {{ $paciente['nombre'] }}" title="Eliminar paciente">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
                             </button>
-                            <div id="patient-actions-mobile-{{ $paciente['id'] }}" popover class="w-64 overflow-hidden rounded-2xl border border-[#ead2fb] bg-white p-0 text-left shadow-2xl">
-                                <div class="border-b border-slate-100 px-5 py-4">
-                                    <p class="font-bold text-slate-800">Acciones</p>
-                                    <p class="mt-1 truncate text-xs text-slate-400">{{ $paciente['nombre'] }}</p>
-                                </div>
-                                <div class="space-y-1 p-2 text-sm font-semibold">
-                                    <a href="{{ route('pacientes.edit', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" class="block rounded-xl px-3 py-2.5 text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">Editar</a>
-                                    <button type="button" data-delete-url="{{ route('pacientes.destroy', ['paciente' => $paciente['id'] ?? $paciente['nombre']]) }}" data-patient-name="{{ $paciente['nombre'] }}" class="js-delete-patient block w-full text-left rounded-xl px-3 py-2.5 text-fuchsia-600 transition hover:bg-fuchsia-50">Eliminar</button>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -232,6 +219,24 @@
         const patientName = el.getAttribute('data-patient-name') || 'Paciente';
         if (!url) return;
         showModal(patientName, url, el);
+    });
+
+    document.querySelectorAll('[data-edit-url]').forEach((patientItem) => {
+        const openEditor = () => {
+            const url = patientItem.getAttribute('data-edit-url');
+            if (url) window.location.href = url;
+        };
+
+        patientItem.addEventListener('click', (event) => {
+            if (event.target.closest('a, button, input, select, textarea, [popover]')) return;
+            openEditor();
+        });
+
+        patientItem.addEventListener('keydown', (event) => {
+            if (event.target !== patientItem || !['Enter', ' '].includes(event.key)) return;
+            event.preventDefault();
+            openEditor();
+        });
     });
 
     btnCancel.addEventListener('click', (e) => {

@@ -14,10 +14,7 @@
             <h1 class="text-4xl font-bold text-gray-800">
                 {{ $isAssistant ? 'Editar perfil de asistente' : 'Editar Perfil' }}
             </h1>
-
-            <p class="text-gray-500 mt-2">
-                {{ $isAssistant ? 'Actualiza tus datos de contacto y area de trabajo.' : 'Actualiza tus datos de contacto y tu especialidad.' }}
-            </p>
+            <p class="mt-2 text-gray-500">{{ $isAssistant ? 'Actualiza tus datos de contacto y area de trabajo.' : 'Actualiza tus datos de contacto y tu especialidad.' }}</p>
 
         </div>
 

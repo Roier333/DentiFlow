@@ -6,8 +6,7 @@
 <div class="space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold text-[#9700cf]">Reportes</p>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-slate-900">Editar cita terminada</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Editar cita terminada</h1>
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Corrige la información histórica de la cita y sincroniza el reporte generado.</p>
         </div>
         <a href="{{ route('admin.reports') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Volver a reportes</a>

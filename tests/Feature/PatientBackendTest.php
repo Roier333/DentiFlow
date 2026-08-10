@@ -153,7 +153,7 @@ class PatientBackendTest extends TestCase
 
     public function test_patient_page_includes_delete_interaction_script(): void
     {
-        Patient::create([
+        $patient = Patient::create([
             'nombre' => 'Paciente Para Eliminar',
             'telefono' => '2220000000',
             'estado' => 'Activo',
@@ -163,6 +163,9 @@ class PatientBackendTest extends TestCase
             ->get(route('pacientes'))
             ->assertOk()
             ->assertSee('js-delete-patient', false)
+            ->assertSee('data-edit-url="'.route('pacientes.edit', $patient).'"', false)
+            ->assertSee('aria-label="Eliminar paciente Paciente Para Eliminar"', false)
+            ->assertDontSee('popovertarget="patient-actions', false)
             ->assertSee("method: 'DELETE'", false);
     }
 
@@ -238,5 +241,40 @@ class PatientBackendTest extends TestCase
             ->assertOk()
             ->assertSee('Paciente Propio Expediente')
             ->assertDontSee('Paciente Ajeno Expediente');
+    }
+
+    public function test_new_record_flow_uses_record_labels_and_navigation(): void
+    {
+        $this->withSession(['access_role' => 'doctor'])
+            ->get(route('expedientes'))
+            ->assertOk()
+            ->assertSee('Nuevo expediente')
+            ->assertSee(route('pacientes.create', ['origen' => 'expedientes']), false);
+
+        $this->withSession(['access_role' => 'doctor'])
+            ->get(route('pacientes.create', ['origen' => 'expedientes']))
+            ->assertOk()
+            ->assertSee('Nuevo expediente')
+            ->assertSee('Volver a expedientes')
+            ->assertSee('name="origen" value="expedientes"', false);
+    }
+
+    public function test_creating_from_records_opens_the_new_patient_record(): void
+    {
+        $response = $this->withSession(['access_role' => 'doctor'])
+            ->post(route('pacientes.store'), [
+                'origen' => 'expedientes',
+                'nombre' => 'Paciente Nuevo Expediente',
+                'telefono' => '2221234567',
+                'direccion' => 'Calle Clinica 123',
+            ]);
+
+        $patient = Patient::where('nombre', 'Paciente Nuevo Expediente')->firstOrFail();
+
+        $response->assertRedirect(route('pacientes.expediente', [
+            'paciente' => $patient,
+            'tab' => 'resumen',
+        ]));
+        $response->assertSessionHas('success', 'Expediente creado correctamente.');
     }
 }

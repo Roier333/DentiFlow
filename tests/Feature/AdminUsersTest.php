@@ -15,7 +15,7 @@ class AdminUsersTest extends TestCase
     {
         User::factory()->create(['name' => 'Usuario Registrado', 'email' => 'usuario@example.test', 'role' => 'doctor']);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->get(route('admin.users'))
             ->assertOk()
             ->assertSee('Usuarios del sistema')
@@ -29,7 +29,7 @@ class AdminUsersTest extends TestCase
 
     public function test_admin_cannot_create_users_from_users_section(): void
     {
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->post('/administracion/usuarios', [
                 'name' => 'Usuario Nuevo',
                 'email' => 'nuevo@example.test',
@@ -46,7 +46,7 @@ class AdminUsersTest extends TestCase
     {
         $user = User::factory()->create(['name' => 'Nombre Anterior', 'email' => 'anterior@example.test', 'role' => 'doctor']);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->put(route('admin.users.update', $user), [
                 'name' => 'Nombre Actualizado',
                 'email' => 'actualizado@example.test',
@@ -70,7 +70,7 @@ class AdminUsersTest extends TestCase
             'role' => 'pendiente',
         ]);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->put(route('admin.users.update', $user), [
                 'name' => 'Dra. Aprobada',
                 'email' => 'aprobada@example.test',
@@ -101,7 +101,7 @@ class AdminUsersTest extends TestCase
             'requested_role' => 'doctor',
         ]);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->get(route('admin.users'))
             ->assertOk()
             ->assertSee('Solicitudes pendientes')
@@ -109,7 +109,7 @@ class AdminUsersTest extends TestCase
             ->assertSee('Solicitó: Doctor')
             ->assertSee('Aprobar como Doctor');
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->put(route('admin.users.approve', $user))
             ->assertRedirect(route('admin.users'))
             ->assertSessionHas('success', 'Solicitud Doctora fue aprobado como Doctor.');
@@ -132,7 +132,7 @@ class AdminUsersTest extends TestCase
             'requested_role' => null,
         ]);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->put(route('admin.users.approve', $user))
             ->assertRedirect(route('admin.users.edit', $user))
             ->assertSessionHasErrors('role');
@@ -151,7 +151,7 @@ class AdminUsersTest extends TestCase
             'role' => 'pendiente',
         ]);
 
-        $this->withSession(['access_role' => 'superadmin'])
+        $this->withSession(['access_role' => 'admin'])
             ->put(route('admin.users.update', $user), [
                 'name' => $user->name,
                 'email' => $user->email,
@@ -171,7 +171,7 @@ class AdminUsersTest extends TestCase
 
     public function test_admin_can_delete_user_and_removed_user_cannot_login(): void
     {
-        $admin = User::factory()->create(['role' => 'superadmin']);
+        $admin = User::factory()->create(['role' => 'admin']);
         $user = User::factory()->create([
             'name' => 'Usuario Eliminable',
             'email' => 'eliminable@example.test',
@@ -185,7 +185,7 @@ class AdminUsersTest extends TestCase
             'telefono' => 'No registrado',
         ]);
 
-        $this->withSession(['access_role' => 'superadmin', 'access_user_id' => $admin->id])
+        $this->withSession(['access_role' => 'admin', 'access_user_id' => $admin->id])
             ->delete(route('admin.users.destroy', $user))
             ->assertRedirect(route('admin.users'))
             ->assertSessionHas('success', 'Usuario eliminado correctamente. Ya no podra acceder al sistema.');
@@ -227,13 +227,12 @@ class AdminUsersTest extends TestCase
     {
         $admin = User::factory()->create([
             'email' => 'admin.actual@example.test',
-            'role' => 'superadmin',
+            'role' => 'admin',
         ]);
 
-        $this->withSession(['access_role' => 'superadmin', 'access_user_id' => $admin->id])
+        $this->withSession(['access_role' => 'admin', 'access_user_id' => $admin->id])
             ->delete(route('admin.users.destroy', $admin))
-            ->assertRedirect(route('admin.users'))
-            ->assertSessionHasErrors('user');
+            ->assertForbidden();
 
         $this->assertDatabaseHas('users', [
             'id' => $admin->id,

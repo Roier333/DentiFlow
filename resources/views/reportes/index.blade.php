@@ -43,17 +43,14 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#9700cf]/70">Analítica clínica</p>
-            <h1 class="mt-2 text-4xl font-bold text-slate-900">Reportes</h1>
-            <p class="mt-2 max-w-2xl text-slate-500">
-                Revisa ganancias, citas y pacientes del consultorio.
-            </p>
+            <h1 class="text-4xl font-bold text-slate-900">Reportes</h1>
+            <p class="mt-2 max-w-2xl text-slate-500">Revisa ganancias, citas y pacientes del consultorio.</p>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row">
             <details class="group relative">
                 <summary class="inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">
-                    Exportar
+                    Generar PDF
                     <span class="text-xs transition group-open:rotate-180">⌄</span>
                 </summary>
                 <div class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
@@ -63,7 +60,23 @@
                         'pacientes' => 'Reporte de pacientes',
                         'tratamientos' => 'Reporte de tratamientos',
                     ] as $exportKey => $exportLabel)
-                        <a href="{{ route('reportes.export', array_merge(request()->query(), ['reporte' => $exportKey])) }}" class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">{{ $exportLabel }}</a>
+                        <a href="{{ route('reportes.export', array_merge(request()->query(), ['reporte' => $exportKey])) }}" class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">{{ $exportLabel }} en PDF</a>
+                    @endforeach
+                </div>
+            </details>
+            <details class="group relative">
+                <summary class="inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-[#9700cf] bg-white px-5 py-3 text-sm font-semibold text-[#9700cf] shadow-sm transition hover:bg-[#fbf0ff]">
+                    Generar Excel
+                    <span class="text-xs transition group-open:rotate-180">⌄</span>
+                </summary>
+                <div class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                    @foreach([
+                        'ganancias' => 'Reporte de ganancias',
+                        'citas' => 'Reporte de citas',
+                        'pacientes' => 'Reporte de pacientes',
+                        'tratamientos' => 'Reporte de tratamientos',
+                    ] as $exportKey => $exportLabel)
+                        <a href="{{ route('reportes.export.excel', array_merge(request()->query(), ['reporte' => $exportKey])) }}" class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">{{ $exportLabel }} en Excel</a>
                     @endforeach
                 </div>
             </details>
