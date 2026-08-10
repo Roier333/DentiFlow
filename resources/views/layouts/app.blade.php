@@ -142,7 +142,7 @@
         </div>
     </aside>
     <div id="content-shell" class="h-[100dvh] min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <header class="sticky top-0 z-20 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7">
+        <header class="relative z-20 flex h-20 shrink-0 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7 lg:sticky lg:top-0">
             <button id="sidebar-open" class="mr-3 rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden" aria-label="Abrir menú"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
             <div id="global-search" class="relative hidden max-w-md flex-1 sm:block">
                 <div class="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-2.5 text-sm transition focus-within:bg-white focus-within:ring-2 focus-within:ring-[#9700cf]/20">

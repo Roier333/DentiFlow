@@ -32,7 +32,7 @@
     @endif
 
     <section class="overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-[0_4px_24px_rgba(30,34,60,.05)]">
-        <div class="flex flex-col gap-3 border-b border-amber-100 bg-amber-50/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 border-b border-amber-100 bg-amber-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div>
                 <div class="flex items-center gap-2">
                     <span class="flex h-8 min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 text-xs font-bold text-white">{{ $pendingUsers->count() }}</span>
@@ -50,11 +50,11 @@
                         : ($pendingUser->requested_role === 'asistente' ? 'Asistente' : 'Sin especificar');
                     $hasValidRequest = in_array($pendingUser->requested_role, ['doctor', 'asistente'], true);
                 @endphp
-                <article class="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-                    <div class="flex min-w-0 items-start gap-4">
+                <article class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                    <div class="flex min-w-0 items-start gap-3 sm:gap-4">
                         <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f6e8ff] text-sm font-bold text-[#9700cf]">{{ mb_strtoupper(mb_substr($pendingUser->name, 0, 1)) }}</span>
                         <div class="min-w-0">
-                            <p class="font-bold text-slate-800">{{ $pendingUser->name }}</p>
+                            <p class="break-words font-bold text-slate-800">{{ $pendingUser->name }}</p>
                             <p class="mt-1 break-all text-sm text-slate-500">{{ $pendingUser->email }}</p>
                             <div class="mt-3 flex flex-wrap items-center gap-2">
                                 <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Pendiente</span>
@@ -64,15 +64,15 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-2 lg:justify-end">
+                    <div class="grid w-full grid-cols-1 gap-2 sm:flex sm:flex-wrap lg:w-auto lg:justify-end">
                         @if($hasValidRequest)
-                            <form method="POST" action="{{ route('admin.users.approve', $pendingUser) }}">
+                            <form method="POST" action="{{ route('admin.users.approve', $pendingUser) }}" class="w-full sm:w-auto">
                                 @csrf
                                 @method('PUT')
-                                <button class="rounded-xl bg-[#9700cf] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#8200b8]">Aprobar como {{ $requestedRoleLabel }}</button>
+                                <button class="w-full rounded-xl bg-[#9700cf] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#8200b8] sm:w-auto">Aprobar como {{ $requestedRoleLabel }}</button>
                             </form>
                         @endif
-                        <a href="{{ route('admin.users.edit', $pendingUser) }}" class="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50">{{ $hasValidRequest ? 'Revisar datos' : 'Asignar rol' }}</a>
+                        <a href="{{ route('admin.users.edit', $pendingUser) }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 sm:w-auto">{{ $hasValidRequest ? 'Revisar datos' : 'Asignar rol' }}</a>
                     </div>
                 </article>
             @empty
