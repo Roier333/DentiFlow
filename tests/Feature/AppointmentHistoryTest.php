@@ -22,7 +22,9 @@ class AppointmentHistoryTest extends TestCase
             ->assertOk()
             ->assertSee('Historial de citas')
             ->assertSee('#'.$appointment->id)
-            ->assertSee('Restaurar');
+            ->assertSee(route('citas.show', $appointment), false)
+            ->assertDontSee('Acciones')
+            ->assertDontSee('Restaurar');
 
         $this->post(route('citas.restaurar', $appointment))
             ->assertRedirect(route('citas.historial'));

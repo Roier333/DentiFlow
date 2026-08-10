@@ -21,26 +21,6 @@
         </a>
     </header>
 
-    <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        @foreach([
-            ['Expedientes', $resumen['total'], 'Pacientes disponibles'],
-            ['Con consultas', $resumen['conConsultas'], 'Notas clínicas registradas'],
-            ['Con citas', $resumen['conCitas'], 'Agenda vinculada'],
-            ['Con tratamientos', $resumen['conTratamientos'], 'Tratamientos registrados'],
-        ] as [$label, $value, $detail])
-            <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-medium text-slate-500">{{ $label }}</p>
-                        <p class="mt-3 text-3xl font-bold text-slate-950">{{ $value }}</p>
-                    </div>
-                    <span class="h-3 w-3 rounded-full border border-[#d3a2f2] bg-[#f6e8ff]"></span>
-                </div>
-                <p class="mt-3 text-sm text-slate-500">{{ $detail }}</p>
-            </article>
-        @endforeach
-    </section>
-
     <form action="{{ route('expedientes') }}" method="GET" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div class="grid gap-4 lg:grid-cols-[minmax(220px,1.5fr)_minmax(170px,0.9fr)_auto] lg:items-end">
             <label class="block">
