@@ -167,12 +167,12 @@
                             <span class="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-fuchsia-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ $roleNotifications->count() > 9 ? '9+' : $roleNotifications->count() }}</span>
                         @endif
                     </summary>
-                    <div class="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                    <div class="fixed left-1/2 top-[4.5rem] z-50 flex max-h-[calc(100dvh-5rem)] w-[calc(100vw-1rem)] max-w-[360px] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:max-h-[min(32rem,calc(100dvh-6rem))] sm:w-[min(360px,calc(100vw-2rem))] sm:max-w-none sm:translate-x-0">
                         <div class="border-b border-slate-100 px-5 py-4">
                             <p class="font-bold text-slate-800">Notificaciones</p>
                             <p class="mt-1 text-xs text-slate-400">{{ $currentRole === 'doctor' ? 'Agenda y seguimiento clínico' : ($currentRole === 'asistente' ? 'Citas e inventario' : 'Avisos del sistema') }}</p>
                         </div>
-                        <div class="max-h-96 overflow-y-auto p-2">
+                        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
                             @forelse($roleNotifications as $notification)
                                 <a href="{{ $notification['url'] }}" class="flex gap-3 rounded-xl p-3 transition {{ $notification['type'] === 'appointment_highlight' ? 'border border-amber-200 bg-amber-50 hover:bg-amber-100' : 'hover:bg-[#fbf0ff]' }}">
                                     <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $notification['type'] === 'appointment_highlight' ? 'bg-amber-100 text-amber-700' : 'bg-[#f6e8ff] text-[#9700cf]' }}">
