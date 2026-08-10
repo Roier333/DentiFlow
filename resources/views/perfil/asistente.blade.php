@@ -10,7 +10,7 @@
 <div class="mx-auto max-w-7xl space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900">Atención operativa</h1>
+            <h1 class="text-4xl font-bold tracking-tight text-slate-900">Perfil</h1>
             <p class="mt-2 text-sm text-slate-500">Información de cuenta, contacto y seguridad del perfil.</p>
         </div>
         <a href="{{ route('perfil.edit') }}" class="inline-flex items-center justify-center rounded-2xl bg-[#9700cf] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#512569]">Editar perfil</a>
