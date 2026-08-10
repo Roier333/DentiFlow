@@ -13,15 +13,21 @@ FROM php:8.2-apache-bookworm
 
 WORKDIR /var/www/html
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # PHPSpreadsheet requires the GD extension to generate and process spreadsheets.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
         libzip-dev \
         unzip \
         zip \
+    && update-ca-certificates \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" gd pdo_mysql zip
 
@@ -32,7 +38,8 @@ RUN a2enmod mpm_prefork rewrite \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN composer config --global cafile /etc/ssl/certs/ca-certificates.crt \
+    && composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --no-scripts
 
 COPY . .
 COPY --from=assets /app/public/build ./public/build
