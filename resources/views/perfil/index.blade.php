@@ -18,9 +18,9 @@
 
     @include('partials.flash-success')
 
-    <section class="grid items-stretch gap-6 lg:grid-cols-3">
-        <aside class="lg:h-full">
-            <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] lg:h-full lg:min-h-[498px]">
+    <section class="grid items-start gap-6 lg:grid-cols-3">
+        <aside>
+            <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)]">
                 <div class="flex flex-col items-center text-center">
                     <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#ead2fb] text-3xl font-bold text-[#9700cf]">{{ strtoupper($initials) }}</div>
                     <span class="mt-4 rounded-full bg-violet-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-700">Área clínica</span>
@@ -44,7 +44,7 @@
             </article>
         </aside>
 
-        <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] lg:h-full lg:min-h-[498px]">
+        <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)]">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900">Agenda semanal</h2>
@@ -62,7 +62,7 @@
                     </div>
         </article>
 
-        <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] lg:h-full lg:min-h-[498px]">
+        <article class="flex flex-col rounded-3xl border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)]">
                     <h2 class="text-xl font-bold text-slate-900">Seguridad</h2>
                     <div class="mt-5 space-y-3">
                         <a href="{{ route('perfil.security') }}" class="flex items-center justify-between rounded-2xl bg-[#fbf0ff] p-4 transition hover:bg-[#ead2fb]"><span class="text-sm font-semibold text-slate-700">Cambiar contraseña</span><span class="text-[#9700cf]">&rarr;</span></a>
