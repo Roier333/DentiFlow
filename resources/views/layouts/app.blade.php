@@ -2,7 +2,7 @@
 <html lang="es" style="margin:0;padding:0;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'DentiFlow') · DentiFlow</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -34,6 +34,24 @@
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
+        }
+
+        #content-shell {
+            position: fixed;
+            inset: 0;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #content-shell > header {
+            position: sticky !important;
+            top: 0 !important;
+            margin: 0 !important;
         }
 
         @media (min-width: 1024px) {
@@ -142,7 +160,7 @@
         </div>
     </aside>
     <div id="content-shell" class="h-[100dvh] min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <header class="relative z-20 flex h-20 shrink-0 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7 lg:sticky lg:top-0">
+        <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-7">
             <button id="sidebar-open" class="mr-3 rounded-xl border border-slate-200 p-2 text-slate-600 lg:hidden" aria-label="Abrir menú"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
             <div id="global-search" class="relative hidden max-w-md flex-1 sm:block">
                 <div class="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-2.5 text-sm transition focus-within:bg-white focus-within:ring-2 focus-within:ring-[#9700cf]/20">
