@@ -23,8 +23,11 @@ RUN apt-get update \
         unzip \
         zip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" gd pdo_mysql zip \
-    && a2enmod rewrite \
+    && docker-php-ext-install -j"$(nproc)" gd pdo_mysql zip
+
+RUN a2dismod -f mpm_event mpm_worker 2>/dev/null || true
+
+RUN a2enmod mpm_prefork rewrite \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
