@@ -37,4 +37,4 @@ COPY --from=assets /app/public/build ./public/build
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf
 
-CMD ["apache2-foreground"]
+CMD ["/bin/sh", "railway/start.sh"]
