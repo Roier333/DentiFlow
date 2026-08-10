@@ -47,7 +47,7 @@ class EnsureRoleAccess
 
             return redirect()
                 ->route('login')
-                ->with('warning', 'Tu usuario ya no esta activo. Contacta a administracion para recuperar el acceso.');
+                ->with('warning', 'Tu cuenta no esta disponible. Contacta al soporte de la clinica para recuperar el acceso.');
         }
 
         if ($role === 'pendiente') {
@@ -55,25 +55,18 @@ class EnsureRoleAccess
         }
 
         if ($role === 'superadmin' && Str::is('admin.users*', $routeName)) {
-            return redirect()->route('inicio')->with('access_denied', 'La gestión de usuarios y solicitudes corresponde al administrador operativo.');
+            return redirect()->route('inicio')->with('access_denied', 'No tienes permiso para acceder a esta seccion.');
         }
 
         if ($role !== 'superadmin' && ! ($role === 'admin' && Str::is('admin.users*', $routeName)) && Str::is('admin.*', $routeName)) {
-            $roleLabel = match ($role) {
-                'doctor' => 'Doctor',
-                'asistente' => 'Asistente',
-                'admin' => 'Administrador operativo',
-                default => 'usuario',
-            };
-
             return redirect()->route('login')->with(
                 'warning',
-                'La sesión activa pertenece al perfil '.$roleLabel.'. Para entrar a la administración técnica, inicia sesión con una cuenta de superadministrador.'
+                'No tienes permiso para acceder a esta seccion. Inicia sesion con una cuenta autorizada.'
             );
         }
 
         if ($this->maintenanceBlocks($role, $routeName)) {
-            return redirect()->route('inicio')->with('access_denied', 'El sistema esta en modo mantenimiento. Solo administracion puede operar modulos internos.');
+            return redirect()->route('inicio')->with('access_denied', 'Esta seccion no esta disponible temporalmente.');
         }
 
         $settings = ClinicSetting::current();
@@ -85,7 +78,7 @@ class EnsureRoleAccess
         ];
 
         if (!isset($permissions[$role]) || !Str::is($permissions[$role], $routeName)) {
-            return redirect()->route('inicio')->with('access_denied', 'Tu perfil no tiene permiso para acceder a esa sección.');
+            return redirect()->route('inicio')->with('access_denied', 'No tienes permiso para acceder a esta seccion.');
         }
 
         return $next($request);

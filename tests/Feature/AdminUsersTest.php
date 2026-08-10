@@ -219,7 +219,7 @@ class AdminUsersTest extends TestCase
         ])
             ->get(route('inicio'))
             ->assertRedirect(route('login'))
-            ->assertSessionHas('warning', 'Tu usuario ya no esta activo. Contacta a administracion para recuperar el acceso.')
+            ->assertSessionHas('warning', 'Tu cuenta no esta disponible. Contacta al soporte de la clinica para recuperar el acceso.')
             ->assertSessionMissing('access_role');
     }
 

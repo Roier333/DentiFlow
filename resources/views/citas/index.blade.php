@@ -97,7 +97,7 @@
     </div>
 
     <form action="{{ route('citas') }}" method="GET" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="grid gap-4 {{ $isDoctor ? 'xl:grid-cols-[minmax(220px,1.3fr)_minmax(150px,0.75fr)_minmax(150px,0.75fr)_minmax(150px,0.8fr)_auto]' : 'xl:grid-cols-[minmax(220px,1.3fr)_minmax(150px,0.75fr)_minmax(190px,0.9fr)_minmax(150px,0.75fr)_minmax(150px,0.8fr)_auto]' }} xl:items-end">
+        <div class="grid gap-4 md:grid-cols-2 {{ $isDoctor ? 'xl:grid-cols-[minmax(160px,1.2fr)_minmax(110px,0.7fr)_minmax(135px,0.75fr)_minmax(130px,0.8fr)_minmax(110px,auto)]' : 'xl:grid-cols-[minmax(160px,1.2fr)_minmax(110px,0.7fr)_minmax(135px,0.9fr)_minmax(135px,0.75fr)_minmax(130px,0.8fr)_minmax(110px,auto)]' }} md:items-end">
             <label class="block">
                 <span class="text-sm font-medium text-slate-600">Buscar</span>
                 <input
@@ -151,8 +151,8 @@
                 </select>
             </label>
 
-            <div class="flex gap-3">
-                <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#512569] xl:flex-none">
+            <div class="flex min-w-0 gap-3 md:col-span-2 xl:col-span-1">
+                <button type="submit" class="inline-flex min-w-[110px] flex-1 items-center justify-center whitespace-nowrap rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#512569] xl:flex-none">
                     Aplicar
                 </button>
 
@@ -195,9 +195,16 @@
                             $isToday = $fechaCita === date('Y-m-d');
                             $isPast = $fechaCita < date('Y-m-d');
                         @endphp
-                        <tr class="transition {{ $isToday ? 'bg-[#f6e8ff]/70 hover:bg-[#f6e8ff]' : 'hover:bg-slate-50' }}">
+                        <tr
+                            class="cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#9700cf]/30 {{ $isToday ? 'bg-[#f6e8ff]/70 hover:bg-[#f6e8ff]' : 'hover:bg-slate-50' }}"
+                            data-edit-url="{{ route('citas.edit', ['id' => $cita['id']]) }}"
+                            tabindex="0"
+                            role="link"
+                            aria-label="Editar cita de {{ $cita['paciente'] }}"
+                            onclick="if (!event.target.closest('a, button, form, [popover], dialog')) window.location.href = this.dataset.editUrl"
+                            onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, [popover], dialog')) { event.preventDefault(); window.location.href = this.dataset.editUrl; }">
                             <td class="px-5 py-4">
-                                <p class="font-semibold text-slate-900">{{ $cita['paciente'] }}</p>
+                                <a href="{{ route('citas.edit', ['id' => $cita['id']]) }}" class="font-semibold text-slate-900 transition hover:text-[#9700cf]">{{ $cita['paciente'] }}</a>
                                 <p class="mt-1 text-sm text-slate-500">Cita #{{ $cita['id'] }}</p>
                             </td>
                             <td class="px-5 py-4">
@@ -257,11 +264,20 @@
                     $isToday = $fechaCita === date('Y-m-d');
                     $isPast = $fechaCita < date('Y-m-d');
                 @endphp
-                <article class="p-5 {{ $isToday ? 'bg-[#f6e8ff]/70' : '' }}">
+                <article
+                    class="cursor-pointer p-5 transition hover:bg-[#fbf5ff] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#9700cf]/30 {{ $isToday ? 'bg-[#f6e8ff]/70' : '' }}"
+                    data-edit-url="{{ route('citas.edit', ['id' => $cita['id']]) }}"
+                    tabindex="0"
+                    role="link"
+                    aria-label="Editar cita de {{ $cita['paciente'] }}"
+                    onclick="if (!event.target.closest('a, button, form, [popover], dialog')) window.location.href = this.dataset.editUrl"
+                    onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, [popover], dialog')) { event.preventDefault(); window.location.href = this.dataset.editUrl; }">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm font-medium text-slate-500">Cita #{{ $cita['id'] }}</p>
-                            <h3 class="mt-1 text-base font-semibold text-slate-900">{{ $cita['paciente'] }}</h3>
+                            <h3 class="mt-1 text-base font-semibold text-slate-900">
+                                <a href="{{ route('citas.edit', ['id' => $cita['id']]) }}" class="transition hover:text-[#9700cf]">{{ $cita['paciente'] }}</a>
+                            </h3>
                         </div>
                         <div class="flex shrink-0 items-center gap-2">
                             <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $estadoClasses[$cita['estado']] ?? 'bg-slate-100 text-slate-600 ring-slate-200' }}">

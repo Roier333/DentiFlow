@@ -47,40 +47,36 @@
             <p class="mt-2 max-w-2xl text-slate-500">Revisa ganancias, citas y pacientes del consultorio.</p>
         </div>
 
-        <div class="flex flex-col gap-3 sm:flex-row">
-            <details class="group relative">
-                <summary class="inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg bg-[#9700cf] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#512569]">
-                    Generar PDF
-                    <span class="text-xs transition group-open:rotate-180">⌄</span>
-                </summary>
-                <div class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+        <details class="group relative w-full lg:w-auto">
+            <summary class="flex w-full cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border border-[#d3a2f2] bg-white px-5 py-3 text-sm font-bold text-[#9700cf] shadow-sm transition hover:bg-[#fbf0ff] lg:w-auto">
+                Exportar reportes <span class="transition group-open:rotate-180">⌄</span>
+            </summary>
+            <div class="relative z-20 mt-2 w-full overflow-hidden rounded-2xl border border-[#ead2fb] bg-white shadow-2xl lg:absolute lg:right-0 lg:w-[420px]">
+                <div class="border-b border-slate-100 px-4 py-3">
+                    <p class="font-bold text-slate-800">Reportes clínicos</p>
+                    <p class="mt-1 text-xs text-slate-400">Selecciona los datos y el formato de descarga.</p>
+                </div>
+                <div class="divide-y divide-slate-100 p-2">
                     @foreach([
-                        'ganancias' => 'Reporte de ganancias',
-                        'citas' => 'Reporte de citas',
-                        'pacientes' => 'Reporte de pacientes',
-                        'tratamientos' => 'Reporte de tratamientos',
-                    ] as $exportKey => $exportLabel)
-                        <a href="{{ route('reportes.export', array_merge(request()->query(), ['reporte' => $exportKey])) }}" class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">{{ $exportLabel }} en PDF</a>
+                        'ganancias' => ['Reporte de ganancias', 'Ingresos de los tratamientos realizados'],
+                        'citas' => ['Reporte de citas', 'Agenda, pacientes y estado de las citas'],
+                        'pacientes' => ['Reporte de pacientes', 'Datos y actividad de los pacientes'],
+                        'tratamientos' => ['Reporte de tratamientos', 'Tratamientos registrados, estado y costos'],
+                    ] as $reportType => [$reportTitle, $reportDescription])
+                        <div class="p-2.5 sm:flex sm:items-center sm:justify-between sm:gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-700">{{ $reportTitle }}</p>
+                                <p class="mt-0.5 text-xs text-slate-400">{{ $reportDescription }}</p>
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0">
+                                <a href="{{ route('reportes.export', array_merge(request()->query(), ['reporte' => $reportType])) }}" class="rounded-lg bg-[#9700cf] px-3 py-2 text-center text-xs font-bold text-white">PDF</a>
+                                <a href="{{ route('reportes.export.excel', array_merge(request()->query(), ['reporte' => $reportType])) }}" class="rounded-lg border border-[#d3a2f2] px-3 py-2 text-center text-xs font-bold text-[#9700cf]">Excel</a>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
-            </details>
-            <details class="group relative">
-                <summary class="inline-flex cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-[#9700cf] bg-white px-5 py-3 text-sm font-semibold text-[#9700cf] shadow-sm transition hover:bg-[#fbf0ff]">
-                    Generar Excel
-                    <span class="text-xs transition group-open:rotate-180">⌄</span>
-                </summary>
-                <div class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-                    @foreach([
-                        'ganancias' => 'Reporte de ganancias',
-                        'citas' => 'Reporte de citas',
-                        'pacientes' => 'Reporte de pacientes',
-                        'tratamientos' => 'Reporte de tratamientos',
-                    ] as $exportKey => $exportLabel)
-                        <a href="{{ route('reportes.export.excel', array_merge(request()->query(), ['reporte' => $exportKey])) }}" class="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]">{{ $exportLabel }} en Excel</a>
-                    @endforeach
-                </div>
-            </details>
-        </div>
+            </div>
+        </details>
     </div>
 
     @include('partials.flash-success')

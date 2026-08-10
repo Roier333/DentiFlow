@@ -217,7 +217,7 @@ class LoginBackendTest extends TestCase
             'role' => 'asistente',
             'email' => 'doctor.rol@example.test',
             'password' => 'password',
-        ])->assertSessionHasErrors('email')
+        ])->assertSessionHasErrors(['email' => 'No fue posible iniciar sesion con los datos proporcionados.'])
             ->assertSessionMissing('access_role');
     }
 

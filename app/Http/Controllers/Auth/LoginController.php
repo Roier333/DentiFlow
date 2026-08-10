@@ -67,15 +67,8 @@ class LoginController extends Controller
 
         $selectedRole = $request->input('role');
         if ($selectedRole && $user->role !== $selectedRole) {
-            $roleLabel = match ($selectedRole) {
-                'doctor' => 'Doctor',
-                'asistente' => 'Asistente',
-                'superadmin' => 'Superadministrador',
-                default => 'Administrador',
-            };
-
             return back()
-                ->withErrors(['email' => 'Esta cuenta no pertenece al acceso de '.$roleLabel.'.'])
+                ->withErrors(['email' => 'No fue posible iniciar sesion con los datos proporcionados.'])
                 ->withInput($request->only('email', 'role'));
         }
 

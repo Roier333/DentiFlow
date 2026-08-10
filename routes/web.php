@@ -226,6 +226,8 @@ Route::put('/dentistas/{id}', [DentistController::class, 'update'])->name('denti
 Route::get('/dentistas/{id}/eliminar', [DentistController::class, 'destroy'])->name('dentistas.delete');
 
 Route::get('/inventario', [InventoryController::class, 'index'])->name('inventario');
+Route::get('/inventario/exportar/pdf', [InventoryController::class, 'exportPdf'])->name('inventario.export.pdf');
+Route::get('/inventario/exportar/excel', [InventoryController::class, 'exportExcel'])->name('inventario.export.excel');
 Route::get('/inventario/crear', [InventoryController::class, 'create'])->name('inventario.create');
 Route::post('/inventario', [InventoryController::class, 'store'])->name('inventario.store');
 Route::get('/inventario/{id}/editar', [InventoryController::class, 'edit'])->name('inventario.edit');

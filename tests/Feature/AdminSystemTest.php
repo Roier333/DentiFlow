@@ -44,7 +44,7 @@ class AdminSystemTest extends TestCase
 
         $this->get(route('admin.system'))
             ->assertRedirect(route('login'))
-            ->assertSessionHas('warning', fn (string $message) => str_contains($message, 'perfil Doctor'));
+            ->assertSessionHas('warning', 'No tienes permiso para acceder a esta seccion. Inicia sesion con una cuenta autorizada.');
 
         $this->post(route('login'), [
             'email' => $admin->email,

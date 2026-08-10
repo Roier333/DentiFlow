@@ -123,16 +123,16 @@ class ReportBackendTest extends TestCase
 
         $response->assertOk()
             ->assertDontSee('Historial')
-            ->assertSee('Generar PDF')
-            ->assertSee('Generar Excel')
-            ->assertSee('Reporte de ganancias en PDF')
-            ->assertSee('Reporte de citas en PDF')
-            ->assertSee('Reporte de pacientes en PDF')
-            ->assertSee('Reporte de tratamientos en PDF')
-            ->assertSee('Reporte de ganancias en Excel')
-            ->assertSee('Reporte de citas en Excel')
-            ->assertSee('Reporte de pacientes en Excel')
-            ->assertSee('Reporte de tratamientos en Excel');
+            ->assertSee('Exportar reportes')
+            ->assertSee('Reportes clínicos')
+            ->assertSee('Reporte de ganancias')
+            ->assertSee('Reporte de citas')
+            ->assertSee('Reporte de pacientes')
+            ->assertSee('Reporte de tratamientos')
+            ->assertSee('PDF')
+            ->assertSee('Excel')
+            ->assertSee('/reportes/export?', false)
+            ->assertSee('/reportes/export/excel?', false);
     }
 
     public function test_report_export_returns_a_pdf_with_a_descriptive_filename(): void

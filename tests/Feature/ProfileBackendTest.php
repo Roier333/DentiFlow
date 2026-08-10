@@ -100,12 +100,21 @@ class ProfileBackendTest extends TestCase
             'password' => 'Password123!',
         ]);
 
-        $this->withSession([
+        $session = [
             'access_role' => 'asistente',
             'access_user_id' => $user->id,
             'access_email' => $user->email,
             'access_name' => $user->name,
-        ])->post(route('perfil.password.update'), [
+        ];
+
+        $this->withSession($session)
+            ->get(route('perfil.security'))
+            ->assertOk()
+            ->assertSee('Actualiza tu contrase&ntilde;a directamente desde tu sesi&oacute;n activa.', false)
+            ->assertDontSee('Enviar c&oacute;digo', false)
+            ->assertDontSee('No recuerdo mi contrase&ntilde;a', false);
+
+        $this->withSession($session)->post(route('perfil.password.update'), [
             'current_password' => 'Password123!',
             'password' => 'NuevaPassword123!',
             'password_confirmation' => 'NuevaPassword123!',

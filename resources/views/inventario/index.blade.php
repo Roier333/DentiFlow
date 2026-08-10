@@ -5,11 +5,35 @@
 @section('content')
 
 <div>
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+    <div class="relative mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-4xl font-bold text-gray-800">Inventario</h1>
             <p class="mt-2 text-gray-500">Control de stock, alertas de reposición y costos por proveedor.</p>
         </div>
+        <details class="group relative w-full md:w-auto">
+            <summary class="flex w-full cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border border-[#d3a2f2] bg-white px-5 py-3 text-sm font-bold text-[#9700cf] shadow-sm transition hover:bg-[#fbf0ff] md:w-auto">
+                Exportar inventario <span class="transition group-open:rotate-180">⌄</span>
+            </summary>
+            <div class="relative z-10 mt-2 w-full overflow-hidden rounded-2xl border border-[#ead2fb] bg-white shadow-2xl md:absolute md:right-0 md:w-[420px]">
+                <div class="border-b border-slate-100 px-4 py-3"><p class="font-bold text-slate-800">Reportes de inventario</p><p class="mt-1 text-xs text-slate-400">Selecciona el contenido y formato de descarga.</p></div>
+                <div class="divide-y divide-slate-100 p-2">
+                    @foreach([
+                        'completo' => ['Inventario completo', 'Todos los materiales y su estado actual'],
+                        'alertas' => ['Productos por reponer', 'Materiales con cinco unidades o menos'],
+                        'proveedores' => ['Costos por proveedor', 'Resumen agrupado por proveedor'],
+                        'valor' => ['Valor del inventario', 'Stock por costo y valor total estimado'],
+                    ] as $reportType => [$reportTitle, $reportDescription])
+                        <div class="p-2.5 sm:flex sm:items-center sm:justify-between sm:gap-3">
+                            <div class="min-w-0"><p class="text-sm font-bold text-slate-700">{{ $reportTitle }}</p><p class="mt-0.5 text-xs text-slate-400">{{ $reportDescription }}</p></div>
+                            <div class="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0">
+                                <a href="{{ route('inventario.export.pdf', ['tipo' => $reportType]) }}" class="rounded-lg bg-[#9700cf] px-3 py-2 text-center text-xs font-bold text-white">PDF</a>
+                                <a href="{{ route('inventario.export.excel', ['tipo' => $reportType]) }}" class="rounded-lg border border-[#d3a2f2] px-3 py-2 text-center text-xs font-bold text-[#9700cf]">Excel</a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </details>
     </div>
 
     <div class="grid gap-6 md:grid-cols-3 mb-6">
@@ -51,13 +75,22 @@
                         <th class="px-6 py-4">Costo unitario</th>
                         <th class="px-6 py-4">Proveedor</th>
                         <th class="px-6 py-4">Estado</th>
-                        <th class="px-6 py-4 text-center">Acciones</th>
+                        <th class="px-6 py-4 text-center">Eliminar</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($productos as $producto)
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4 text-gray-800">{{ $producto['material'] }}</td>
+                        <tr
+                            class="cursor-pointer border-b transition hover:bg-[#fbf5ff] focus-within:bg-[#fbf5ff]"
+                            data-edit-url="{{ route('inventario.edit', ['id' => $producto['id']]) }}"
+                            tabindex="0"
+                            role="link"
+                            aria-label="Editar {{ $producto['material'] }}"
+                            onclick="if (!event.target.closest('a, button, form')) window.location.href = this.dataset.editUrl"
+                            onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form')) { event.preventDefault(); window.location.href = this.dataset.editUrl; }">
+                            <td class="px-6 py-4 font-semibold text-gray-800">
+                                <a href="{{ route('inventario.edit', ['id' => $producto['id']]) }}" class="transition hover:text-[#9700cf]">{{ $producto['material'] }}</a>
+                            </td>
                             <td class="px-6 py-4 text-gray-700">{{ $producto['stock'] }}</td>
                             <td class="px-6 py-4 text-gray-700">{{ $producto['reposicion'] }}</td>
                             <td class="px-6 py-4 text-gray-700">${{ number_format($producto['costo'], 2, ',', '.') }}</td>
@@ -72,22 +105,17 @@
                                     'bg-emerald-50 text-emerald-700 ring-emerald-200' => $stockStatus === 'high',
                                 ])>{{ $producto->stockStatusLabel() }}</span>
                             </td>
-                            <td class="px-6 py-4">
-                                <div class="flex justify-center">
-                                    <button type="button" popovertarget="inventory-actions-{{ $producto['id'] }}" class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-[#f6e8ff] hover:text-[#9700cf]" aria-label="Acciones de {{ $producto['material'] }}">
-                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="18" cy="12" r="1.7" /></svg>
-                                    </button>
-                                    <div id="inventory-actions-{{ $producto['id'] }}" popover class="w-56 overflow-hidden rounded-2xl border border-[#ead2fb] bg-white p-0 text-left shadow-2xl">
-                                        <div class="border-b border-slate-100 px-5 py-4">
-                                            <p class="font-bold text-slate-800">Acciones</p>
-                                            <p class="mt-1 truncate text-xs text-slate-400">{{ $producto['material'] }}</p>
-                                        </div>
-                                        <div class="space-y-1 p-2 text-sm font-semibold">
-                                            <a href="{{ route('inventario.edit', ['id' => $producto['id']]) }}" class="block rounded-xl px-3 py-2.5 text-[#9700cf] transition hover:bg-[#f6e8ff]">Editar</a>
-                                            <a href="{{ route('inventario.delete', ['id' => $producto['id']]) }}" class="block rounded-xl px-3 py-2.5 text-fuchsia-600 transition hover:bg-fuchsia-50">Eliminar</a>
-                                        </div>
-                                    </div>
-                                </div>
+                            <td class="px-6 py-4 text-center">
+                                <a
+                                    href="{{ route('inventario.delete', ['id' => $producto['id']]) }}"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 transition hover:bg-red-50 hover:text-red-700"
+                                    aria-label="Eliminar {{ $producto['material'] }}"
+                                    title="Eliminar material"
+                                    onclick="event.stopPropagation(); return confirm('¿Deseas eliminar este material del inventario?')">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+                                    </svg>
+                                </a>
                             </td>
                         </tr>
                     @endforeach

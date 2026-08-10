@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\InventoryItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class InventoryBackendTest extends TestCase
@@ -202,5 +203,77 @@ class InventoryBackendTest extends TestCase
             ->get(route('inventario'))
             ->assertOk()
             ->assertSee('<p class="font-semibold text-gray-800"></p>', false);
+    }
+
+    public function test_inventory_page_offers_pdf_and_excel_report_types(): void
+    {
+        $this->withSession(['access_role' => 'admin'])
+            ->get(route('inventario'))
+            ->assertOk()
+            ->assertSee('Exportar inventario')
+            ->assertSee('Inventario completo')
+            ->assertSee('Productos por reponer')
+            ->assertSee('Costos por proveedor')
+            ->assertSee('Valor del inventario')
+            ->assertSee(route('inventario.export.pdf', ['tipo' => 'completo']), false)
+            ->assertSee(route('inventario.export.excel', ['tipo' => 'valor']), false);
+    }
+
+    public function test_inventory_report_downloads_a_real_pdf(): void
+    {
+        InventoryItem::create([
+            'material' => 'Anestesia reporte PDF',
+            'stock' => 4,
+            'reposicion' => 10,
+            'costo' => 250,
+            'proveedor' => 'OdontoMed',
+        ]);
+
+        $response = $this->withSession(['access_role' => 'admin', 'access_name' => 'Administrador Inventario'])
+            ->get(route('inventario.export.pdf', ['tipo' => 'alertas']));
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+        $this->assertStringContainsString('inventario-alertas-dentiflow-', $response->headers->get('content-disposition'));
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_inventory_report_downloads_a_formatted_excel_workbook(): void
+    {
+        InventoryItem::create([
+            'material' => 'Resina reporte Excel',
+            'stock' => 8,
+            'reposicion' => 5,
+            'costo' => 400,
+            'proveedor' => 'Dental Excel',
+        ]);
+
+        $response = $this->withSession(['access_role' => 'admin', 'access_name' => 'Administrador Inventario'])
+            ->get(route('inventario.export.excel', ['tipo' => 'valor']));
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $response->headers->get('content-type'));
+        $this->assertStringContainsString('inventario-valor-dentiflow-', $response->headers->get('content-disposition'));
+
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'inventario-excel-');
+        file_put_contents($temporaryFile, $response->streamedContent());
+        $workbook = IOFactory::load($temporaryFile);
+        $sheet = $workbook->getActiveSheet();
+
+        $this->assertSame('Reporte de valor del inventario', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Material', $sheet->getCell('A5')->getValue());
+        $materialRow = null;
+        for ($row = 6; $row <= $sheet->getHighestDataRow(); $row++) {
+            if ($sheet->getCell('A'.$row)->getValue() === 'Resina reporte Excel') {
+                $materialRow = $row;
+                break;
+            }
+        }
+        $this->assertNotNull($materialRow);
+        $this->assertSame(3200.0, (float) $sheet->getCell('D'.$materialRow)->getValue());
+        $this->assertTrue($sheet->getAutoFilter()->getRange() !== '');
+
+        $workbook->disconnectWorksheets();
+        @unlink($temporaryFile);
     }
 }
