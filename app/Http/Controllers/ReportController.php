@@ -29,8 +29,10 @@ class ReportController extends Controller
         $periodo = $request->query('periodo', 'Ultimos 6 meses');
         $desde = $request->query('desde');
         $hasta = $request->query('hasta');
+        $fecha = $request->query('fecha');
+        $mes = $request->query('mes');
 
-        [$from, $to, $periodoLabel, $hasData] = $this->resolvePeriod($periodo, $desde, $hasta);
+        [$from, $to, $periodoLabel, $hasData] = $this->resolvePeriod($periodo, $desde, $hasta, $fecha, $mes);
         $isDoctor = $request->session()->get('access_role') === 'doctor';
         $doctorDentist = $isDoctor ? $this->sessionDentist($request) : null;
 
@@ -49,7 +51,6 @@ class ReportController extends Controller
             $isDoctor,
             $doctorDentist
         )->get();
-
         $patientsCount = $appointments->pluck('patient_id')
             ->merge($treatments->pluck('patient_id'))
             ->filter()
@@ -167,8 +168,13 @@ class ReportController extends Controller
             'maxTreatmentCount',
             'hasData',
             'periodo',
+            'periodoLabel',
+            'from',
+            'to',
             'desde',
-            'hasta'
+            'hasta',
+            'fecha',
+            'mes'
         ));
     }
 
@@ -177,7 +183,13 @@ class ReportController extends Controller
         $this->completeOverdueAppointments($request);
 
         $periodo = $request->query('periodo', 'Ultimos 6 meses');
-        [$from, $to] = $this->resolvePeriod($periodo, $request->query('desde'), $request->query('hasta'));
+        [$from, $to] = $this->resolvePeriod(
+            $periodo,
+            $request->query('desde'),
+            $request->query('hasta'),
+            $request->query('fecha'),
+            $request->query('mes')
+        );
         $reportType = in_array($request->query('reporte', 'tratamientos'), ['ganancias', 'citas', 'pacientes', 'tratamientos'], true)
             ? $request->query('reporte', 'tratamientos')
             : 'tratamientos';
@@ -203,6 +215,7 @@ class ReportController extends Controller
             $isDoctor,
             $doctorDentist
         )->get();
+        $totalEarnings = (float) $treatments->where('estado', 'Realizado')->sum('costo');
 
         [$headers, $rows] = match ($reportType) {
             'ganancias' => [
@@ -297,6 +310,7 @@ class ReportController extends Controller
             'to' => $to,
             'generatedAt' => now(),
             'generatedBy' => $request->session()->get('access_name', 'Usuario DentiFlow'),
+            'totalEarnings' => $totalEarnings,
         ])->setPaper('letter', 'landscape')->download($filename);
     }
 
@@ -305,7 +319,13 @@ class ReportController extends Controller
         $this->completeOverdueAppointments($request);
 
         $periodo = $request->query('periodo', 'Ultimos 6 meses');
-        [$from, $to] = $this->resolvePeriod($periodo, $request->query('desde'), $request->query('hasta'));
+        [$from, $to] = $this->resolvePeriod(
+            $periodo,
+            $request->query('desde'),
+            $request->query('hasta'),
+            $request->query('fecha'),
+            $request->query('mes')
+        );
         $reportType = in_array($request->query('reporte', 'tratamientos'), ['ganancias', 'citas', 'pacientes', 'tratamientos'], true)
             ? $request->query('reporte', 'tratamientos')
             : 'tratamientos';
@@ -327,6 +347,7 @@ class ReportController extends Controller
             $isDoctor,
             $doctorDentist
         )->get();
+        $totalEarnings = (float) $treatments->where('estado', 'Realizado')->sum('costo');
 
         [$headers, $rows] = match ($reportType) {
             'ganancias' => [
@@ -395,11 +416,12 @@ class ReportController extends Controller
             $rows,
             $from,
             $to,
-            $request->session()->get('access_name', 'Usuario DentiFlow')
+            $request->session()->get('access_name', 'Usuario DentiFlow'),
+            $totalEarnings
         );
     }
 
-    private function downloadExcelReport(string $title, string $reportType, array $headers, array $labels, $rows, string $from, string $to, string $generatedBy)
+    private function downloadExcelReport(string $title, string $reportType, array $headers, array $labels, $rows, string $from, string $to, string $generatedBy, float $totalEarnings)
     {
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()->setCreator('DentiFlow')->setTitle($title)->setSubject('Reporte clinico');
@@ -455,17 +477,17 @@ class ReportController extends Controller
             $sheet->getStyle("A6:{$lastColumn}{$lastDataRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
             $sheet->setAutoFilter("A5:{$lastColumn}{$lastDataRow}");
         }
-        $moneyHeader = collect($headers)->first(fn ($header) => in_array($header, $moneyColumns, true));
-        if ($moneyHeader && $rows->isNotEmpty()) {
-            $totalRow = $rowNumber + 1;
-            $moneyIndex = array_search($moneyHeader, $headers, true) + 1;
-            $moneyColumn = Coordinate::stringFromColumnIndex($moneyIndex);
-            $labelColumn = Coordinate::stringFromColumnIndex(max(1, $moneyIndex - 1));
-            $sheet->setCellValue($labelColumn.$totalRow, 'TOTAL');
-            $sheet->setCellValue($moneyColumn.$totalRow, "=SUM({$moneyColumn}6:{$moneyColumn}{$lastDataRow})");
-            $sheet->getStyle($labelColumn.$totalRow.':'.$moneyColumn.$totalRow)->getFont()->setBold(true);
-            $sheet->getStyle($moneyColumn.$totalRow)->getNumberFormat()->setFormatCode('"$"#,##0.00');
-        }
+        $totalRow = $rowNumber;
+        $totalValueColumn = $lastColumn;
+        $totalLabelColumn = Coordinate::stringFromColumnIndex(max(1, count($headers) - 1));
+        $sheet->setCellValue($totalLabelColumn.$totalRow, 'GANANCIAS TOTALES');
+        $sheet->setCellValueExplicit($totalValueColumn.$totalRow, $totalEarnings, DataType::TYPE_NUMERIC);
+        $sheet->getStyle($totalLabelColumn.$totalRow.':'.$totalValueColumn.$totalRow)->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['RGB' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['RGB' => '9700CF']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['RGB' => 'EAD2FB']]],
+        ]);
+        $sheet->getStyle($totalValueColumn.$totalRow)->getNumberFormat()->setFormatCode('"$"#,##0.00');
         $widths = ['fecha' => 14, 'hora' => 13, 'paciente' => 28, 'telefono' => 17, 'tratamiento' => 28, 'tipo' => 24, 'estado' => 17, 'dentista' => 26, 'citas' => 12, 'tratamientos' => 16, 'ganancia' => 16, 'ganancias' => 16, 'costo' => 16];
         foreach ($headers as $index => $header) {
             $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($index + 1))->setWidth($widths[$header] ?? 18);
@@ -480,16 +502,44 @@ class ReportController extends Controller
         }, $filename, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
     }
 
-    private function resolvePeriod(string $periodo, ?string $desde, ?string $hasta): array
+    private function resolvePeriod(
+        string $periodo,
+        ?string $desde,
+        ?string $hasta,
+        ?string $fecha = null,
+        ?string $mes = null
+    ): array
     {
         $today = Carbon::today();
         $from = $today->copy()->subMonths(5)->startOfMonth();
         $to = $today->copy()->endOfMonth();
 
         switch ($periodo) {
+            case 'Hoy':
+                $from = $today->copy();
+                $to = $today->copy();
+                break;
+            case 'Dia especifico':
+            case 'Día específico':
+                $selectedDay = $this->parseReportDate($fecha);
+                if (! $selectedDay) {
+                    return [$from->toDateString(), $to->toDateString(), $periodo, false];
+                }
+                $from = $selectedDay->copy();
+                $to = $selectedDay->copy();
+                break;
             case 'Este mes':
                 $from = $today->copy()->startOfMonth();
                 $to = $today->copy()->endOfMonth();
+                break;
+            case 'Mes especifico':
+            case 'Mes específico':
+                $selectedMonth = $this->parseReportMonth($mes);
+                if (! $selectedMonth) {
+                    return [$from->toDateString(), $to->toDateString(), $periodo, false];
+                }
+                $from = $selectedMonth->copy()->startOfMonth();
+                $to = $selectedMonth->copy()->endOfMonth();
                 break;
             case 'Ultimos 3 meses':
             case 'Últimos 3 meses':
@@ -504,13 +554,8 @@ class ReportController extends Controller
                 $from = $today->copy()->startOfYear();
                 break;
             case 'Personalizado':
-                try {
-                    $customFrom = $desde ? Carbon::createFromFormat('Y-m', $desde)->startOfMonth() : null;
-                    $customTo = $hasta ? Carbon::createFromFormat('Y-m', $hasta)->endOfMonth() : null;
-                } catch (\Throwable) {
-                    $customFrom = null;
-                    $customTo = null;
-                }
+                $customFrom = $this->parseReportBoundary($desde, false);
+                $customTo = $this->parseReportBoundary($hasta, true);
 
                 if ($customFrom && $customTo && $customFrom->lte($customTo)) {
                     $from = $customFrom;
@@ -522,6 +567,47 @@ class ReportController extends Controller
         }
 
         return [$from->toDateString(), $to->toDateString(), $periodo, true];
+    }
+
+    private function parseReportDate(?string $value): ?Carbon
+    {
+        if (! $value || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            $date = Carbon::createFromFormat('!Y-m-d', $value);
+            return $date->format('Y-m-d') === $value ? $date : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function parseReportMonth(?string $value): ?Carbon
+    {
+        if (! $value || ! preg_match('/^\d{4}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            $month = Carbon::createFromFormat('!Y-m', $value);
+            return $month->format('Y-m') === $value ? $month : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function parseReportBoundary(?string $value, bool $end): ?Carbon
+    {
+        if ($date = $this->parseReportDate($value)) {
+            return $date;
+        }
+
+        if ($month = $this->parseReportMonth($value)) {
+            return $end ? $month->endOfMonth() : $month->startOfMonth();
+        }
+
+        return null;
     }
 
     private function previousPeriodRange(string $from, string $to): array

@@ -28,6 +28,8 @@
         th { border: 1px solid #512569; background: #512569; padding: 7px 5px; color: #fff; font-size: 8px; text-align: left; text-transform: uppercase; }
         td { border: 1px solid #e7ddec; padding: 6px 5px; vertical-align: top; overflow-wrap: break-word; }
         tbody tr:nth-child(even) td { background: #fbf8fc; }
+        tfoot td { border-color: #9700cf; background: #9700cf; padding: 8px 6px; color: #fff; font-weight: bold; }
+        .total-label { text-align: right; text-transform: uppercase; }
         .money { text-align: right; white-space: nowrap; }
         .empty { padding: 28px; color: #8a7399; text-align: center; }
     </style>
@@ -94,6 +96,12 @@
                     <tr><td colspan="{{ count($headers) }}" class="empty">No hay informacion para el periodo seleccionado.</td></tr>
                 @endforelse
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="{{ max(count($headers) - 1, 1) }}" class="total-label">Ganancias totales</td>
+                    <td class="money">${{ number_format($totalEarnings, 2, '.', ',') }}</td>
+                </tr>
+            </tfoot>
         </table>
     </main>
 </body>

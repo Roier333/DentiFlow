@@ -108,6 +108,47 @@ class ReportBackendTest extends TestCase
         $response->assertDontSee('$900');
     }
 
+    public function test_reports_can_filter_by_specific_day_and_specific_month(): void
+    {
+        $patient = Patient::create(['nombre' => 'Paciente por fecha', 'telefono' => '2220000099', 'estado' => 'Activo']);
+        $dentist = Dentist::create(['nombre' => 'Dra. Filtros', 'telefono' => '2220000098']);
+
+        foreach (['2026-08-10' => 'Tratamiento del día', '2026-08-11' => 'Tratamiento de otro día'] as $date => $name) {
+            $appointment = Appointment::create([
+                'patient_id' => $patient->id,
+                'dentist_id' => $dentist->id,
+                'date' => $date,
+                'time' => '10:00:00',
+                'tipo' => $name,
+                'estado' => 'Asistida',
+            ]);
+            Treatment::create([
+                'patient_id' => $patient->id,
+                'appointment_id' => $appointment->id,
+                'paciente' => $patient->nombre,
+                'tratamiento' => $name,
+                'tipo' => 'Filtro',
+                'fecha' => $date,
+                'estado' => 'Realizado',
+                'costo' => 500,
+            ]);
+        }
+
+        $this->withSession(['access_role' => 'admin'])
+            ->get(route('reportes', ['periodo' => 'Día específico', 'fecha' => '2026-08-10']))
+            ->assertOk()
+            ->assertSee('Tratamiento del día')
+            ->assertDontSee('Tratamiento de otro día')
+            ->assertSee('10/08/2026 al 10/08/2026');
+
+        $this->withSession(['access_role' => 'admin'])
+            ->get(route('reportes', ['periodo' => 'Mes específico', 'mes' => '2026-08']))
+            ->assertOk()
+            ->assertSee('Tratamiento del día')
+            ->assertSee('Tratamiento de otro día')
+            ->assertSee('01/08/2026 al 31/08/2026');
+    }
+
     public function test_reports_do_not_show_mock_distribution_without_data(): void
     {
         $response = $this->withSession(['access_role' => 'doctor'])->get(route('reportes', ['periodo' => 'Este mes']));
@@ -215,13 +256,23 @@ class ReportBackendTest extends TestCase
     {
         $patient = Patient::create(['nombre' => 'Paciente Excel', 'telefono' => '2221112233', 'estado' => 'Activo']);
         $dentist = Dentist::create(['nombre' => 'Dra. Excel', 'telefono' => '2221112244']);
-        Appointment::create([
+        $appointment = Appointment::create([
             'patient_id' => $patient->id,
             'dentist_id' => $dentist->id,
             'date' => now()->toDateString(),
             'time' => '09:30:00',
             'tipo' => 'Consulta Excel',
             'estado' => 'Confirmada',
+        ]);
+        Treatment::create([
+            'patient_id' => $patient->id,
+            'appointment_id' => $appointment->id,
+            'paciente' => $patient->nombre,
+            'tratamiento' => 'Consulta Excel',
+            'tipo' => 'Diagnostico',
+            'fecha' => now()->toDateString(),
+            'estado' => 'Realizado',
+            'costo' => 725,
         ]);
 
         $response = $this->withSession(['access_role' => 'admin', 'access_name' => 'Administrador Excel'])
@@ -239,6 +290,8 @@ class ReportBackendTest extends TestCase
         $this->assertSame('Reporte de citas', $sheet->getCell('A1')->getValue());
         $this->assertSame('Paciente', $sheet->getCell('C5')->getValue());
         $this->assertSame('Paciente Excel', $sheet->getCell('C6')->getValue());
+        $this->assertSame('GANANCIAS TOTALES', $sheet->getCell('E7')->getValue());
+        $this->assertSame(725.0, (float) $sheet->getCell('F7')->getValue());
         $this->assertSame('A6', $sheet->getFreezePane());
 
         $workbook->disconnectWorksheets();

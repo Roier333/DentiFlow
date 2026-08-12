@@ -6,15 +6,21 @@
 
 @php
     $periodoOptions = [
+        'Hoy' => 'Hoy',
+        'Día específico' => 'Día específico',
         'Este mes' => 'Este mes',
+        'Mes específico' => 'Mes específico',
         'Últimos 3 meses' => 'Últimos 3 meses',
         'Últimos 6 meses' => 'Últimos 6 meses',
         'Este año' => 'Este año',
-        'Personalizado' => 'Personalizado',
+        'Personalizado' => 'Rango personalizado',
     ];
 
-    $periodoActual = request('periodo', 'Últimos 6 meses');
-    $periodoLabel = $periodoOptions[$periodoActual] ?? 'Últimos 6 meses';
+    $periodoActual = $periodo ?? request('periodo', 'Últimos 6 meses');
+    $periodoLabelVisible = $periodoOptions[$periodoActual] ?? $periodoLabel ?? 'Últimos 6 meses';
+    $isSpecificDay = in_array($periodoActual, ['Dia especifico', 'Día específico'], true);
+    $isSpecificMonth = in_array($periodoActual, ['Mes especifico', 'Mes específico'], true);
+    $isCustomRange = $periodoActual === 'Personalizado';
 
     $metricas = [
         [
@@ -82,7 +88,7 @@
     @include('partials.flash-success')
 
     <form id="report-filter" action="{{ route('reportes') }}" method="GET" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="grid gap-4 lg:grid-cols-[minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(150px,0.7fr)_auto] lg:items-end">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(190px,0.9fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)_minmax(160px,0.75fr)_auto] xl:items-end">
             <label class="block">
                 <span class="text-sm font-medium text-slate-600">Periodo</span>
                 <select id="periodo" name="periodo" class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-700 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
@@ -92,24 +98,36 @@
                 </select>
             </label>
 
-            <label class="block">
-                <span class="text-sm font-medium text-slate-600">Mes inicial</span>
+            <label id="specific-day-field" class="{{ $isSpecificDay ? 'block' : 'hidden' }}">
+                <span class="text-sm font-medium text-slate-600">Día del reporte</span>
                 <input
-                    id="desde"
-                    name="desde"
-                    type="month"
-                    value="{{ request('desde') }}"
+                    id="fecha"
+                    name="fecha"
+                    type="date"
+                    value="{{ request('fecha', $fecha ?? '') }}"
+                    @disabled(! $isSpecificDay)
                     class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
             </label>
 
-            <label class="block">
-                <span class="text-sm font-medium text-slate-600">Mes final</span>
+            <label id="specific-month-field" class="{{ $isSpecificMonth ? 'block' : 'hidden' }}">
+                <span class="text-sm font-medium text-slate-600">Mes del reporte</span>
                 <input
-                    id="hasta"
-                    name="hasta"
+                    id="mes"
+                    name="mes"
                     type="month"
-                    value="{{ request('hasta') }}"
+                    value="{{ request('mes', $mes ?? '') }}"
+                    @disabled(! $isSpecificMonth)
                     class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
+            </label>
+
+            <label id="custom-from-field" class="{{ $isCustomRange ? 'block' : 'hidden' }}">
+                <span class="text-sm font-medium text-slate-600">Fecha inicial</span>
+                <input id="desde" name="desde" type="date" value="{{ request('desde', $desde ?? '') }}" @disabled(! $isCustomRange) class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
+            </label>
+
+            <label id="custom-to-field" class="{{ $isCustomRange ? 'block' : 'hidden' }}">
+                <span class="text-sm font-medium text-slate-600">Fecha final</span>
+                <input id="hasta" name="hasta" type="date" value="{{ request('hasta', $hasta ?? '') }}" @disabled(! $isCustomRange) class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-[#9700cf] focus:ring-2 focus:ring-[#9700cf]/20">
             </label>
 
             <div class="flex gap-3">
@@ -126,10 +144,8 @@
         </div>
 
         <p class="mt-4 text-sm text-slate-500">
-            Periodo actual: <span class="font-semibold text-slate-700">{{ $periodoLabel }}</span>
-            @if($periodoActual === 'Personalizado' && preg_match('/^\d{4}-\d{2}$/', request('desde', '')) && preg_match('/^\d{4}-\d{2}$/', request('hasta', '')))
-                <span> · {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', request('desde'))->locale('es')->translatedFormat('F Y') }} a {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', request('hasta'))->locale('es')->translatedFormat('F Y') }}</span>
-            @endif
+            Periodo actual: <span class="font-semibold text-slate-700">{{ $periodoLabelVisible }}</span>
+            <span> · {{ \Illuminate\Support\Carbon::parse($from)->format('d/m/Y') }} al {{ \Illuminate\Support\Carbon::parse($to)->format('d/m/Y') }}</span>
         </p>
     </form>
 
@@ -231,27 +247,47 @@
     (() => {
         const form = document.getElementById('report-filter');
         const period = document.getElementById('periodo');
+        const day = document.getElementById('fecha');
+        const month = document.getElementById('mes');
         const from = document.getElementById('desde');
         const to = document.getElementById('hasta');
+        const fields = {
+            day: document.getElementById('specific-day-field'),
+            month: document.getElementById('specific-month-field'),
+            from: document.getElementById('custom-from-field'),
+            to: document.getElementById('custom-to-field'),
+        };
+
+        const updateFields = () => {
+            const showDay = ['Dia especifico', 'Día específico'].includes(period.value);
+            const showMonth = ['Mes especifico', 'Mes específico'].includes(period.value);
+            const showRange = period.value === 'Personalizado';
+
+            [[fields.day, day, showDay], [fields.month, month, showMonth], [fields.from, from, showRange], [fields.to, to, showRange]]
+                .forEach(([wrapper, input, visible]) => {
+                    wrapper.classList.toggle('hidden', !visible);
+                    wrapper.classList.toggle('block', visible);
+                    input.disabled = !visible;
+                });
+        };
 
         period.addEventListener('change', () => {
-            if (period.value !== 'Personalizado') {
-                from.value = '';
-                to.value = '';
+            updateFields();
+
+            if (!['Dia especifico', 'Día específico', 'Mes especifico', 'Mes específico', 'Personalizado'].includes(period.value)) {
                 form.requestSubmit();
             }
         });
 
+        day.addEventListener('change', () => day.value && form.requestSubmit());
+        month.addEventListener('change', () => month.value && form.requestSubmit());
         [from, to].forEach((input) => input.addEventListener('change', () => {
-            if (!input.value) {
-                return;
+            if (from.value && to.value) {
+                form.requestSubmit();
             }
-
-            period.value = 'Personalizado';
-            from.value ||= input.value;
-            to.value ||= input.value;
-            form.requestSubmit();
         }));
+
+        updateFields();
     })();
 </script>
 
