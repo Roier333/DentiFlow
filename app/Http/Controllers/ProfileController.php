@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -25,7 +26,10 @@ class ProfileController extends Controller
         }
 
         if (in_array(session('access_role'), ['asistente', 'admin'], true)) {
+            $workspace = request()->attributes->get('clinic_workspace');
+
             return view('perfil.asistente', [
+                'billingWorkspace' => $workspace && (int) $workspace->owner_user_id === (int) $usuario->id ? $workspace : null,
                 'usuario' => $this->assistantProfileData($usuario),
                 'actividades' => $this->assistantActivities(),
                 'lastAccess' => $lastAccess,
@@ -280,10 +284,17 @@ class ProfileController extends Controller
 
     private function profileUser(): User
     {
+        $user = request()->user() ?? User::find(session('access_user_id'));
+        if ($user) {
+            return $user;
+        }
+
+        abort_unless(app()->environment('local', 'testing'), 403);
+
         if (session('access_role') === 'superadmin') {
             return User::firstOrCreate(
                 ['email' => 'admin@gmail.com'],
-                ['name' => 'Administrador DentiFlow', 'role' => 'superadmin', 'password' => bcrypt('Admin123!')]
+                ['name' => 'Administrador DentiFlow', 'role' => 'superadmin', 'password' => Str::random(64)]
             );
         }
 
@@ -295,7 +306,7 @@ class ProfileController extends Controller
                     [
                         'name' => 'Asistente DentiFlow',
                         'role' => 'asistente',
-                        'password' => bcrypt('Asistente123!'),
+                        'password' => Str::random(64),
                         'telefono' => 'No registrado',
                         'puesto' => 'Recepcion y gestion de citas',
                     ]
@@ -306,7 +317,7 @@ class ProfileController extends Controller
             ?? User::where('email', session('access_email'))->first()
             ?? User::firstOrCreate(
                 ['email' => 'laura.ramirez@dentiflow.com'],
-                ['name' => 'Dr. Samuel', 'role' => 'doctor', 'password' => bcrypt('password')]
+                ['name' => 'Dr. Samuel', 'role' => 'doctor', 'password' => Str::random(64)]
             );
     }
 

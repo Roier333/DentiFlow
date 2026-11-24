@@ -6,7 +6,7 @@
     },
     "deploy": {
         "preDeployCommand": [
-            "php artisan migrate --force"
+            "php artisan migrate --force && php artisan dentiflow:provision-admins"
         ],
         "healthcheckPath": "/login",
         "healthcheckTimeout": 120,

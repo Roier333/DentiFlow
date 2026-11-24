@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Dentist;
+use App\Models\ClinicWorkspace;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -10,6 +11,106 @@ use Tests\TestCase;
 class AdminUsersTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_admin_can_invite_a_dentist_with_a_single_use_registration_link(): void
+    {
+        $this->withSession(['access_role' => 'admin'])
+            ->post(route('admin.users.invite'), [
+                'invite_role' => 'doctor',
+            ])->assertRedirect(route('admin.users'))->assertSessionHas('invite_link');
+
+        $url = session('invite_link');
+        $whatsapp = session('invite_whatsapp');
+        $this->assertStringStartsWith('https://wa.me/?text=', $whatsapp);
+        $this->assertStringContainsString($url, rawurldecode($whatsapp));
+
+        $this->flushSession();
+        $this->get($url)->assertOk()->assertSee('Ya tengo cuenta');
+        $this->get($url.'&role=asistente')->assertForbidden();
+        $registration = [
+            'name' => 'Dentista Invitado',
+            'email' => 'DENTISTA@example.test',
+            'role' => 'asistente',
+            'gender' => 'hombre',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ];
+
+        $this->from($url)->post($url, array_replace($registration, ['name' => '']))
+            ->assertRedirect($url)
+            ->assertSessionHasErrors('name');
+        $this->get($url)->assertOk();
+        $this->post($url, $registration)->assertRedirect(route('inicio'));
+
+        $dentist = User::where('email', 'dentista@example.test')->firstOrFail();
+        $this->assertDatabaseHas('clinic_workspace_members', [
+            'clinic_workspace_id' => ClinicWorkspace::oldest('id')->firstOrFail()->id,
+            'user_id' => $dentist->id,
+            'role' => 'doctor',
+        ]);
+
+        $this->get($url)->assertStatus(410);
+        auth()->logout();
+        $this->flushSession();
+        $this->post('/login', ['email' => $dentist->email, 'password' => 'Password123!'])
+            ->assertRedirect(route('inicio'))
+            ->assertSessionHas('access_role', 'doctor');
+
+        $dentist->delete();
+        $this->post($url, $registration)->assertStatus(410);
+        $this->assertDatabaseMissing('users', ['email' => 'dentista@example.test']);
+    }
+
+    public function test_existing_user_accepts_only_the_inviting_workspace(): void
+    {
+        config(['mail.default' => 'log']);
+        $owner = User::factory()->create();
+        $clinic = ClinicWorkspace::createForOwner($owner, 'Consultorio Pedrito');
+        $otherClinic = ClinicWorkspace::createForOwner(User::factory()->create(), 'Consultorio Juan');
+        $recipient = User::factory()->create(['email' => 'asistente@example.test', 'role' => 'doctor']);
+        $otherClinic->members()->attach($recipient, ['role' => 'doctor']);
+
+        $this->actingAs($owner)->withSession(['clinic_workspace_id' => $clinic->id]);
+        $this->get(route('admin.users'))->assertOk()->assertDontSee($recipient->email);
+        $this->post(route('admin.users.invite'), [
+            'invite_role' => 'asistente',
+        ])->assertRedirect(route('admin.users'))->assertSessionHas('invite_link');
+        $url = session('invite_link');
+        $this->get($url)->assertOk()
+            ->assertSee('Esta cuenta ya pertenece al consultorio.')
+            ->assertSee('Cerrar sesión y crear otra cuenta')
+            ->assertDontSee('Aceptar con esta cuenta');
+        $this->post($url)->assertSessionHasErrors('invitation');
+
+        $this->post($url, ['invitation_switch_account' => '1'])->assertRedirect($url);
+        $this->assertGuest();
+        $this->get($url)->assertOk()->assertSee('Crear cuenta y aceptar');
+        $this->post($url, ['invitation_login' => '1'])->assertRedirect(route('login'));
+        $this->post('/login', ['email' => $recipient->email, 'password' => 'password'])->assertRedirect($url);
+        $this->get($url)->assertOk()->assertSee('Consultorio Pedrito');
+        $this->post($url)->assertRedirect(route('inicio'))->assertSessionHas('clinic_workspace_id', $clinic->id);
+        $this->get(route('calendario'))->assertOk()->assertSessionHas('access_role', 'asistente');
+        $this->get($url)->assertStatus(410);
+        $this->assertSame('asistente', $recipient->clinicWorkspaces()->findOrFail($clinic->id)->pivot->role);
+        $this->assertSame('doctor', $recipient->clinicWorkspaces()->findOrFail($otherClinic->id)->pivot->role);
+        $this->actingAs($owner)->withSession(['clinic_workspace_id' => $clinic->id])
+            ->get(route('admin.users'))->assertOk()->assertSee($recipient->email);
+    }
+
+    public function test_admin_can_copy_a_whatsapp_invitation(): void
+    {
+        config(['mail.default' => 'log']);
+
+        $this->withSession(['access_role' => 'admin'])
+            ->post(route('admin.users.invite'), [
+                'invite_role' => 'asistente',
+            ])->assertRedirect(route('admin.users'))->assertSessionHas('invite_link');
+
+        $this->get(route('admin.users'))->assertOk()
+            ->assertSee('Copia y comparte este enlace')->assertSee('Compartir por WhatsApp')
+            ->assertDontSee('invite_phone')
+            ->assertDontSee('Solicitudes pendientes');
+    }
 
     public function test_admin_can_open_registered_users_section_without_create_form(): void
     {
@@ -92,7 +193,7 @@ class AdminUsersTest extends TestCase
         ]);
     }
 
-    public function test_superadmin_sees_requested_profile_and_can_approve_it_directly(): void
+    public function test_legacy_requests_are_hidden_from_the_clinic_roster(): void
     {
         $user = User::factory()->create([
             'name' => 'Solicitud Doctora',
@@ -104,13 +205,10 @@ class AdminUsersTest extends TestCase
         $this->withSession(['access_role' => 'admin'])
             ->get(route('admin.users'))
             ->assertOk()
-            ->assertSee('Solicitudes pendientes')
-            ->assertSee('Solicitud Doctora')
-            ->assertSee('Solicitó: Doctor')
-            ->assertSee('Aprobar como Doctor');
+            ->assertDontSee('Solicitudes pendientes')
+            ->assertDontSee('Solicitud Doctora');
 
-        $this->withSession(['access_role' => 'admin'])
-            ->put(route('admin.users.approve', $user))
+        $this->put(route('admin.users.approve', $user))
             ->assertRedirect(route('admin.users'))
             ->assertSessionHas('success', 'Solicitud Doctora fue aprobado como Doctor.');
 

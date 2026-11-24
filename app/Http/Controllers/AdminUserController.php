@@ -3,7 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\ClinicWorkspace;
+use App\Support\ClinicContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
@@ -11,25 +16,40 @@ class AdminUserController extends Controller
     public function index(Request $request)
     {
         $search = trim($request->query('search', ''));
+        $context = app(ClinicContext::class);
+        $workspaceOnly = $context->workspaceId !== null;
 
-        $users = User::with('dentist')
-            ->whereIn('role', ['pendiente', 'doctor', 'asistente'])
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($subQuery) use ($search) {
+        $query = User::with('dentist')->select('users.*');
+        if ($workspaceOnly) {
+            $query->join('clinic_workspace_members as membership', 'membership.user_id', '=', 'users.id')
+                ->where('membership.clinic_workspace_id', $context->id())
+                ->whereIn('membership.role', ['doctor', 'asistente'])
+                ->addSelect('membership.role as clinic_role');
+        } else {
+            $query->whereIn('users.role', ['doctor', 'asistente'])
+                ->addSelect(['clinic_role' => DB::table('clinic_workspace_members')
+                    ->select('role')->whereColumn('user_id', 'users.id')
+                    ->where('clinic_workspace_id', $context->legacyId())])
+                ->withExists(['clinicWorkspaces as has_other_clinics' => fn ($workspaces) => $workspaces
+                    ->where('clinic_workspaces.id', '!=', $context->legacyId())])
+                ->where(function ($users) use ($context) {
+                    $users->whereDoesntHave('clinicWorkspaces')
+                        ->orWhereHas('clinicWorkspaces', fn ($workspaces) => $workspaces->whereKey($context->legacyId()));
+                });
+        }
+        $roleColumn = $workspaceOnly ? 'membership.role' : 'users.role';
+        $users = $query
+            ->when($search !== '', function ($query) use ($search, $roleColumn) {
+                $query->where(function ($subQuery) use ($search, $roleColumn) {
                     $subQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('role', 'like', "%{$search}%")
+                        ->orWhere($roleColumn, 'like', "%{$search}%")
                         ->orWhereHas('dentist', fn ($dentistQuery) => $dentistQuery->where('nombre', 'like', "%{$search}%"));
                 });
             })
             ->orderBy('name')
             ->paginate(8)
             ->withQueryString();
-
-        $pendingUsers = User::query()
-            ->where('role', 'pendiente')
-            ->orderBy('created_at')
-            ->get();
 
         $summary = [
             'total' => User::count(),
@@ -40,7 +60,7 @@ class AdminUserController extends Controller
             'pending' => User::where('role', 'pendiente')->count(),
         ];
 
-        return view('admin.users.index', compact('users', 'pendingUsers', 'summary', 'search'));
+        return view('admin.users.index', compact('users', 'summary', 'search', 'workspaceOnly'));
     }
 
     public function edit(User $user)
@@ -49,6 +69,39 @@ class AdminUserController extends Controller
         $user->load('dentist');
 
         return view('admin.users.edit', compact('user'));
+    }
+
+    public function invite(Request $request)
+    {
+        $data = $request->validate([
+            'invite_role' => ['required', Rule::in(['doctor', 'asistente'])],
+        ], [
+            'invite_role.required' => 'Selecciona Dentista o Asistente.',
+            'invite_role.in' => 'Selecciona Dentista o Asistente.',
+        ]);
+
+        $workspace = ClinicWorkspace::findOrFail(app(ClinicContext::class)->id());
+        $seatLimit = $workspace->seatLimit();
+        if ($seatLimit !== null && $workspace->members()->count() >= $seatLimit) {
+            return back()->withInput()->withErrors(['invite_role' => 'Tu agenda alcanzó el límite de integrantes del plan.']);
+        }
+
+        $invitationId = (string) Str::uuid();
+        DB::table('user_invitations')->insert([
+            'id' => $invitationId,
+            'clinic_workspace_id' => $workspace->id,
+            'role' => $data['invite_role'],
+        ]);
+        $url = URL::temporarySignedRoute('register.invitation', now()->addDays(3), [
+            'invitation' => $invitationId,
+        ]);
+        $role = $data['invite_role'] === 'doctor' ? 'Dentista' : 'Asistente';
+        $message = "Te invito a {$workspace->name} en DentiFlow como {$role}. Usa este enlace dentro de 3 días: {$url}";
+
+        return redirect()->route('admin.users')->with([
+            'invite_link' => $url,
+            'invite_whatsapp' => 'https://wa.me/?text='.rawurlencode($message),
+        ]);
     }
 
     public function update(Request $request, User $user)
@@ -67,6 +120,11 @@ class AdminUserController extends Controller
                 ? $user->requested_role
                 : null,
         ]);
+        if ($user->role === 'pendiente') {
+            $user->clinicWorkspaces()->detach(app(ClinicContext::class)->legacyId());
+        } else {
+            $user->clinicWorkspaces()->updateExistingPivot(app(ClinicContext::class)->legacyId(), ['role' => $user->role]);
+        }
 
         if ($user->role === 'doctor') {
             $user->dentist()->updateOrCreate(
@@ -142,5 +200,7 @@ class AdminUserController extends Controller
     private function ensureOperationalUser(User $user): void
     {
         abort_unless(in_array($user->role, ['pendiente', 'doctor', 'asistente'], true), 403);
+        abort_if($user->clinicWorkspaces()->where('clinic_workspaces.id', '!=', app(ClinicContext::class)->legacyId())->exists(), 403);
+        abort_if($user->role === 'pendiente' && ! $user->requested_role && $user->clinicWorkspaces()->exists(), 403);
     }
 }

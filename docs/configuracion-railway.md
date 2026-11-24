@@ -6,6 +6,10 @@ URL publica:
 
 ## Variables del servicio web
 
+En una base nueva configura `DENTIFLOW_ADMIN_EMAIL` y `DENTIFLOW_ADMIN_PASSWORD` para el administrador operativo que gestiona **Usuarios**. Si también necesitas acceso a la administración general, configura `DENTIFLOW_SUPERADMIN_EMAIL` y `DENTIFLOW_SUPERADMIN_PASSWORD` con otro correo. Usa contraseñas únicas de al menos 12 caracteres y guarda estos valores solo en Railway.
+
+El predespliegue crea las cuentas configuradas después de migrar. Las cuentas existentes conservan su contraseña. Una vez creadas, se pueden retirar las variables de aprovisionamiento.
+
 Copiar en **Railway > servicio DentiFlow > Variables** los valores de
 `.env.railway.example`. `APP_KEY` debe contener una clave generada una sola vez
 con `php artisan key:generate --show` y no debe cambiarse en cada despliegue.

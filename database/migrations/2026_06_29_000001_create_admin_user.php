@@ -3,16 +3,21 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::table('users')->updateOrInsert(
-            ['email' => 'admin@gmail.com'],
+        if (! app()->environment('local', 'testing')) {
+            return;
+        }
+
+        DB::table('users')->insertOrIgnore(
             [
+                'email' => 'admin@gmail.com',
                 'name' => 'Administrador DentiFlow',
-                'password' => Hash::make('Admin123!'),
+                'password' => Hash::make(Str::random(64)),
                 'updated_at' => now(),
                 'created_at' => now(),
             ]
@@ -21,6 +26,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('users')->where('email', 'admin@gmail.com')->delete();
+        if (app()->environment('local', 'testing')) {
+            DB::table('users')->where('email', 'admin@gmail.com')->delete();
+        }
     }
 };

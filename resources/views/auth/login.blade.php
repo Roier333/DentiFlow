@@ -9,44 +9,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-[#fbf0ff] font-['DM_Sans'] text-[#21152e] antialiased">
-<main class="min-h-screen lg:grid lg:grid-cols-[minmax(360px,42%)_1fr]">
-    <section class="relative overflow-hidden bg-[#512569] px-6 py-8 text-white sm:px-10 lg:min-h-screen lg:px-12 lg:py-10">
-        <div class="absolute inset-0 opacity-30" style="background-image: linear-gradient(135deg, rgba(234,210,251,.22) 0 1px, transparent 1px), linear-gradient(45deg, rgba(151,0,207,.18) 0 1px, transparent 1px); background-size: 42px 42px;"></div>
-        <div class="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#21152e] to-transparent"></div>
+<body class="min-h-screen bg-white font-['DM_Sans'] text-[#21152e] antialiased">
+<main class="relative min-h-screen overflow-hidden bg-white">
+    <div class="absolute inset-x-0 top-0 h-[56vh] bg-gradient-to-b from-[#512569] via-[#78358c] to-white"></div>
+    <div class="absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#9700cf]/20 blur-3xl"></div>
+    <div class="absolute -right-24 top-20 h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div class="relative z-10 flex min-h-[520px] flex-col lg:min-h-[calc(100vh-5rem)]">
-            <header class="flex items-center">
-                <div class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#9700cf] shadow-lg shadow-[#21152e]/30">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.3 3.7c1.8-.8 3 .3 4.7.3s2.9-1.1 4.7-.3c2.6 1.2 3 4.8 1.9 7.3-.9 2.1-1.4 3.4-1.6 6.6-.1 1.7-.9 3.4-2.1 3.4-1.7 0-1.2-4.8-2.9-4.8S10.8 21 9.1 21C7.9 21 7.1 19.3 7 17.6c-.2-3.2-.7-4.5-1.6-6.6C4.3 8.5 4.7 4.9 7.3 3.7Z"/></svg>
-                    </span>
-                    <div>
-                        <p class="text-base font-bold leading-none">DentiFlow</p>
-                        <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/45">Gestión clínica</p>
-                    </div>
-                </div>
-            </header>
+    <div class="relative z-10 flex min-h-screen flex-col px-5 py-7 sm:px-8 sm:py-9">
+        <header class="flex items-center justify-center gap-3 text-white">
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7.3 3.7c1.8-.8 3 .3 4.7.3s2.9-1.1 4.7-.3c2.6 1.2 3 4.8 1.9 7.3-.9 2.1-1.4 3.4-1.6 6.6-.1 1.7-.9 3.4-2.1 3.4-1.7 0-1.2-4.8-2.9-4.8S10.8 21 9.1 21C7.9 21 7.1 19.3 7 17.6c-.2-3.2-.7-4.5-1.6-6.6C4.3 8.5 4.7 4.9 7.3 3.7Z"/></svg>
+            </span>
+            <span class="text-xl font-bold tracking-tight">DentiFlow</span>
+        </header>
 
-            <div class="flex flex-1 flex-col justify-center py-14 lg:py-16">
-                <div class="mx-auto max-w-lg text-left">
-                <h1 class="text-5xl font-bold leading-tight tracking-tight sm:text-6xl">Plataforma centralizada de gestión</h1>
-                <p class="mt-6 max-w-lg text-lg leading-8 text-white/70">Autentíquese con sus credenciales autorizadas, para habilitar de manera automática las funciones de su rol.</p>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <section class="flex min-h-screen items-center px-5 py-8 sm:px-8 lg:h-screen lg:min-h-0 lg:overflow-hidden lg:px-12 lg:py-6">
-        <div class="mx-auto w-full max-w-2xl">
+        <section class="flex flex-1 items-center justify-center py-8 sm:py-10">
+            <div class="w-full max-w-md rounded-[2rem] bg-white/95 p-6 shadow-[0_24px_70px_rgba(65,27,78,.15)] backdrop-blur-sm sm:p-9">
             @if(session('warning'))
                 <div class="mb-6 rounded-2xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 text-sm font-semibold text-fuchsia-700">{{ session('warning') }}</div>
             @endif
             @include('partials.flash-success')
 
             <div>
-                <form method="POST" action="{{ route('login') }}" autocomplete="{{ session('login_credentials_failed') ? 'off' : 'on' }}" class="rounded-[1.35rem] border border-[#ead2fb] bg-white p-6 shadow-[0_18px_60px_rgba(81,37,105,.08)] sm:p-7">
+                <form method="POST" action="{{ route('login') }}" autocomplete="{{ session('login_credentials_failed') ? 'off' : 'on' }}">
                     @csrf
 
                     @if ($errors->any())
@@ -57,30 +42,30 @@
                         </div>
                     @endif
 
-                    <div class="mb-6 flex items-center gap-4">
-                        <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ead2fb] text-[#9700cf]">
-                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M5 22v-3a7 7 0 0 1 14 0v3"/></svg>
+                    <div class="mb-8 flex flex-col items-center text-center">
+                        <span class="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1e2f8] text-[#9700cf]">
+                            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <circle cx="12" cy="7" r="4"/>
+                                <path d="M5 21v-2a7 7 0 0 1 14 0v2"/>
+                            </svg>
                         </span>
-                        <div>
-                            <p class="text-2xl font-bold text-[#21152e]">Iniciar sesión</p>
-
-                        </div>
+                        <h1 class="mt-4 text-3xl font-bold tracking-tight text-[#21152e]">Iniciar sesión</h1>
                     </div>
 
-                    <div class="space-y-6">
+                    <div class="space-y-5">
                         <div>
-                            <label for="email" class="mb-2.5 block text-base font-semibold text-slate-700">Correo electrónico</label>
-                            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="nombre@clinica.com" autocomplete="email" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-base outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
+                            <label for="email" class="mb-2 block text-base font-semibold text-[#3d3046]">Correo electrónico</label>
+                            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="nombre@clinica.com" autocomplete="email" required class="w-full rounded-2xl border border-[#e6dce9] bg-white px-4 py-4 text-base outline-none transition placeholder:text-slate-400 focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]/70">
                         </div>
 
                         <div>
-                            <div class="mb-2.5 flex justify-between gap-3">
-                                <label for="password" class="text-base font-semibold text-slate-700">Contraseña</label>
-                                <a id="recover-password" href="{{ route('password.forgot') }}" class="text-sm font-semibold text-[#9700cf]">¿Olvidaste tu contraseña?</a>
+                            <div class="mb-2 flex items-center justify-between gap-3">
+                                <label for="password" class="text-base font-semibold text-[#3d3046]">Contraseña</label>
+                                <a id="recover-password" href="{{ route('password.forgot') }}" class="text-sm font-semibold text-[#9700cf] transition hover:text-[#512569]">¿Olvidaste tu contraseña?</a>
                             </div>
                             <div class="relative">
-                                <input id="password" type="password" name="password" value="" placeholder="********" autocomplete="{{ session('login_credentials_failed') ? 'new-password' : 'current-password' }}" required class="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-4 pr-12 text-base outline-none transition focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]">
-                                <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-[#9700cf] focus:outline-none" aria-label="Mostrar contraseña" aria-pressed="false">
+                                <input id="password" type="password" name="password" value="" placeholder="Ingresa tu contraseña" autocomplete="{{ session('login_credentials_failed') ? 'new-password' : 'current-password' }}" required class="w-full rounded-2xl border border-[#e6dce9] bg-white py-4 pl-4 pr-12 text-base outline-none transition placeholder:text-slate-400 focus:border-[#9700cf] focus:ring-4 focus:ring-[#ead2fb]/70">
+                                <button id="toggle-password" type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-2xl text-slate-400 transition hover:text-[#9700cf] focus:outline-none focus:ring-4 focus:ring-inset focus:ring-[#ead2fb]/70" aria-label="Mostrar contraseña" aria-pressed="false">
                                     <svg id="eye-open" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                         <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
                                         <circle cx="12" cy="12" r="2.5"/>
@@ -93,22 +78,21 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full rounded-xl bg-[#9700cf] py-3.5 text-base font-bold text-white shadow-lg shadow-[#d3a2f2] transition hover:bg-[#512569]">Entrar a DentiFlow</button>
+                        <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-[#9700cf] to-[#7d16a3] py-4 text-base font-bold text-white shadow-[0_12px_28px_rgba(151,0,207,.2)] transition hover:from-[#7d16a3] hover:to-[#512569] focus:outline-none focus:ring-4 focus:ring-[#ead2fb]">Iniciar sesión</button>
                     </div>
 
-                    <div class="mt-5 rounded-2xl border border-[#ead2fb] bg-[#fbf0ff] px-4 py-3.5 text-center">
-                        <p class="text-sm font-semibold text-[#6b5778]">¿Aún no tienes cuenta?</p>
-                        <a href="{{ route('register') }}" class="mt-1 inline-flex text-base font-bold text-[#9700cf] transition hover:text-[#512569]">Crear cuenta</a>
-                    </div>
+                    <p class="mt-7 text-center text-sm text-[#715f7c]">
+                        ¿No tienes cuenta?
+                        <a href="{{ route('register') }}" class="ml-1 font-bold text-[#9700cf] transition hover:text-[#512569]">Crear cuenta</a>
+                    </p>
                 </form>
+                <p class="mt-3 text-center text-sm">
+                    <a href="{{ route('marketing.dentiflow') }}" class="font-semibold text-[#512569] underline">Conoce DentiFlow</a>
+                </p>
             </div>
-
-            <footer class="mt-4 flex flex-col gap-2 text-sm text-[#8a7399] sm:flex-row sm:items-center sm:justify-between">
-                <span>© {{ date('Y') }} DentiFlow</span>
-                <span>Acceso para personal autorizado</span>
-            </footer>
-        </div>
-    </section>
+            </div>
+        </section>
+    </div>
 </main>
 @if(session('logout_success'))
     <div id="logout-toast" role="status" aria-live="polite" class="fixed right-3 top-3 z-50 flex w-[calc(100%-1.5rem)] max-w-sm items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800 shadow-xl transition duration-500 sm:right-5 sm:top-5 sm:w-auto">

@@ -10,6 +10,41 @@ use Tests\TestCase;
 
 class BladeRouteLinksTest extends TestCase
 {
+    public function test_guest_can_find_the_public_product_page_and_request_access(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee(route('marketing.dentiflow'));
+
+        $this->get(route('marketing.dentiflow'))
+            ->assertOk()
+            ->assertSee('Solicitar acceso')
+            ->assertSee(route('register'));
+    }
+
+    public function test_public_blog_shows_plans_and_the_configured_trial_flow(): void
+    {
+        config(['stripe.enabled' => false]);
+
+        $this->get(route('marketing.dentiflow'))
+            ->assertOk()
+            ->assertSee('Básico')
+            ->assertSee('$199')
+            ->assertSee('Consultorio')
+            ->assertSee('$499')
+            ->assertSee('Hasta 2 personas')
+            ->assertSee('Hasta 8 personas')
+            ->assertSee('72 horas sin tarjeta');
+
+        config(['stripe.enabled' => true]);
+
+        $this->get(route('marketing.dentiflow'))
+            ->assertOk()
+            ->assertSee('registra una tarjeta de débito en Stripe')
+            ->assertSee('Stripe cobra el plan al terminar la prueba')
+            ->assertDontSee('72 horas sin tarjeta');
+    }
+
     public function test_all_named_routes_referenced_by_blade_views_exist(): void
     {
         $missing = [];

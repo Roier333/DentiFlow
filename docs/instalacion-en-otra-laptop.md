@@ -209,15 +209,7 @@ Ejecutar:
 php artisan migrate --seed
 ```
 
-Este comando crea las tablas y los usuarios iniciales:
-
-| Rol | Correo | Contraseña |
-| --- | --- | --- |
-| Administrador | `admin@gmail.com` | `Admin123!` |
-| Asistente | `asistente@dentiflow.com` | `Asistente123!` |
-| Doctor | `doctor@dentiflow.com` | `Doctor123!` |
-
-Estas contraseñas son accesos iniciales y deben cambiarse si el sistema tendrá información real.
+Las cuentas de demostración se crean con contraseñas aleatorias. Para crear tus propias cuentas administrativas, configura las variables DENTIFLOW_ADMIN_EMAIL y DENTIFLOW_ADMIN_PASSWORD (y las de superadministración si las necesitas) en el .env local y ejecuta `php artisan dentiflow:provision-admins`. Elige correos distintos de las cuentas de demostración.
 
 ### Escenario B: traslado con pacientes, citas y demás datos
 

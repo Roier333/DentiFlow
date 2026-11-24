@@ -8,10 +8,14 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ClinicInvitationController;
+use App\Http\Controllers\Auth\ClinicRegistrationController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\ClinicalRecordController;
+use App\Http\Controllers\ClinicPlanController;
 use App\Http\Controllers\PasswordRecoveryController;
+use App\Http\Middleware\EnsureRoleAccess;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,17 +35,36 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
+Route::view('/conoce-dentiflow', 'marketing.dentiflow')
+    ->withoutMiddleware(EnsureRoleAccess::class)
+    ->name('marketing.dentiflow');
+
 Route::post('/login', [LoginController::class, 'store']);
+
+Route::get('/register/invitacion/{invitation}', [ClinicInvitationController::class, 'show'])
+    ->whereUuid('invitation')->middleware('signed')->name('register.invitation');
+Route::post('/register/invitacion/{invitation}', [ClinicInvitationController::class, 'store'])
+    ->whereUuid('invitation')->middleware(['signed', 'throttle:10,1'])->name('register.invitation.store');
 
 Route::get('/registro-en-espera', function () {
     return view('auth.pending');
 })->name('register.pending');
 
-Route::get('/register', function (Request $request) {
+Route::get('/register', function (Request $request, ClinicRegistrationController $registration) {
     $role = $request->query('role');
+    $invitedEmail = $request->query('invited_email');
 
-    if ($role === null) {
-        return view('auth.role-selector', ['registrationMode' => true]);
+    if ($invitedEmail === null) {
+        return $registration->show($request);
+    }
+
+    if ($invitedEmail !== null) {
+        abort_unless($request->hasValidSignature(), 403, 'La invitación venció o el enlace es inválido.');
+        abort_unless(DB::table('user_invitations')
+            ->where('id', $request->query('invitation'))
+            ->whereNull('clinic_workspace_id')
+            ->whereNull('used_at')
+            ->exists(), 410, 'La invitación ya se utilizó o necesitas pedir un enlace nuevo.');
     }
 
     if (! in_array($role, ['doctor', 'asistente'], true)) {
@@ -50,10 +73,23 @@ Route::get('/register', function (Request $request) {
             ->with('warning', 'Elige Doctor o Asistente para crear tu cuenta.');
     }
 
-    return view('auth.register', ['selectedRole' => $role]);
+    return view('auth.register', ['selectedRole' => $role, 'invitedEmail' => $invitedEmail]);
 })->name('register');
 
-Route::post('/register', function (Request $request) {
+Route::post('/register', function (Request $request, ClinicRegistrationController $registration) {
+    if ($request->query('invited_email') === null) {
+        return $registration->store($request);
+    }
+
+    if ($request->query('invited_email') !== null) {
+        abort_unless($request->hasValidSignature(), 403, 'La invitación venció o el enlace es inválido.');
+
+        $request->merge([
+            'email' => $request->query('invited_email'),
+            'role' => $request->query('role'),
+        ]);
+    }
+
     $data = $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|email|max:255|unique:users,email',
@@ -75,7 +111,17 @@ Route::post('/register', function (Request $request) {
         'gender.in' => 'El genero seleccionado no es valido.',
     ]);
 
-    $user = DB::transaction(function () use ($data) {
+    $user = DB::transaction(function () use ($data, $request) {
+        if ($request->query('invited_email') !== null) {
+            $claimed = DB::table('user_invitations')
+                ->where('id', $request->query('invitation'))
+                ->whereNull('clinic_workspace_id')
+                ->whereNull('used_at')
+                ->update(['used_at' => now()]);
+
+            abort_unless($claimed === 1, 410, 'La invitación ya se utilizó o necesitas pedir un enlace nuevo.');
+        }
+
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -93,7 +139,7 @@ Route::post('/register', function (Request $request) {
             'pending_email' => $user->email,
             'pending_requested_role' => $user->requested_role,
         ]);
-});
+})->middleware('throttle:10,1');
 
 Route::get('/forgot-password', [PasswordRecoveryController::class, 'showForgotForm'])->name('password.forgot');
 Route::post('/forgot-password/send-code', [PasswordRecoveryController::class, 'sendCode'])->name('password.forgot.send');
@@ -182,6 +228,9 @@ Route::get('/administracion/reportes/citas/{appointment}/editar', [AdminReportCo
 Route::put('/administracion/reportes/citas/{appointment}', [AdminReportController::class, 'updateAppointment'])->name('admin.reports.appointments.update');
 Route::delete('/administracion/reportes/{treatment}', [AdminReportController::class, 'destroy'])->name('admin.reports.destroy');
 Route::get('/administracion/usuarios', [AdminUserController::class, 'index'])->name('admin.users');
+Route::post('/administracion/usuarios/invitar', [AdminUserController::class, 'invite'])
+    ->middleware('throttle:5,1')
+    ->name('admin.users.invite');
 Route::get('/administracion/usuarios/{user}/editar', [AdminUserController::class, 'edit'])->name('admin.users.edit');
 Route::put('/administracion/usuarios/{user}/aprobar', [AdminUserController::class, 'approve'])->name('admin.users.approve');
 Route::put('/administracion/usuarios/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
@@ -189,6 +238,9 @@ Route::delete('/administracion/usuarios/{user}', [AdminUserController::class, 'd
 
 Route::redirect('/dashboard', '/inicio');
 Route::get('/inicio', [DashboardController::class, 'index'])->name('inicio');
+Route::get('/agenda/plan', [ClinicPlanController::class, 'show'])->name('clinic.plan');
+Route::post('/agenda/plan', [ClinicPlanController::class, 'start'])->name('clinic.plan.start');
+Route::post('/agenda/plan/portal', [ClinicPlanController::class, 'portal'])->name('clinic.plan.portal');
 Route::get('/calendario', [DashboardController::class, 'calendar'])->name('calendario');
 Route::post('/calendario/bloqueos', [DashboardController::class, 'storeCalendarBlock'])->name('calendario.bloqueos.store');
 Route::delete('/calendario/bloqueos/{block}', [DashboardController::class, 'destroyCalendarBlock'])->name('calendario.bloqueos.destroy');
@@ -257,6 +309,7 @@ Route::get('/reportes/export', [\App\Http\Controllers\ReportController::class, '
 Route::get('/reportes/export/excel', [\App\Http\Controllers\ReportController::class, 'exportExcel'])->name('reportes.export.excel');
 
 Route::get('/perfil', [\App\Http\Controllers\ProfileController::class, 'show'])->name('perfil');
+Route::post('/perfil/suscripcion', [ClinicPlanController::class, 'change'])->name('perfil.subscription.change');
 Route::get('/perfil/editar', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('perfil.edit');
 Route::get('/perfil/seguridad', [\App\Http\Controllers\ProfileController::class, 'security'])->name('perfil.security');
 Route::post('/perfil', [\App\Http\Controllers\ProfileController::class, 'update'])->name('perfil.update');

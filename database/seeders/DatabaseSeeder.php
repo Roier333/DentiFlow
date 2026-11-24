@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,12 +18,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment('local', 'testing')) {
+            return;
+        }
+
         User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Administrador DentiFlow',
                 'role' => 'superadmin',
-                'password' => Hash::make('Admin123!'),
+                'password' => Hash::make(Str::random(64)),
             ]
         );
 
@@ -31,7 +36,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Administrador Operativo',
                 'role' => 'admin',
-                'password' => Hash::make('Administrador123!'),
+                'password' => Hash::make(Str::random(64)),
                 'telefono' => '2220000002',
                 'puesto' => 'Administracion clinica',
             ]
@@ -42,7 +47,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Asistente DentiFlow',
                 'role' => 'asistente',
-                'password' => Hash::make('Asistente123!'),
+                'password' => Hash::make(Str::random(64)),
                 'telefono' => '2220000000',
                 'puesto' => 'Recepcion',
             ]
@@ -53,7 +58,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Dra. DentiFlow',
                 'role' => 'doctor',
-                'password' => Hash::make('Doctor123!'),
+                'password' => Hash::make(Str::random(64)),
                 'telefono' => '2220000001',
                 'puesto' => 'Odontologia general',
             ]
